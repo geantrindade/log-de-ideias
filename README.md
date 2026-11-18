@@ -58,6 +58,13 @@ and the same banner appears.
 ⚙ settings → **Trocar senha**. Both files are re-encrypted with new salts. Other devices will ask for
 the new password. Older commits remain decryptable with the old password.
 
+## Importing ideas
+
+⚙ settings → **Importar ideias** reads a local JSON file (`{"ideas": [...]}` or a plain list, same
+fields as the data model; only `title` is required). Ideas whose title already exists are skipped.
+The file is read only in the browser and saved encrypted in a single `Update ideas` commit.
+Keep import files out of this repository and delete them afterwards.
+
 ## "Lembrar neste dispositivo"
 
 Optional, off by default. It stores the derived AES keys as non-extractable `CryptoKey` objects in

@@ -328,6 +328,20 @@ dialog h2 { margin: 0 0 1rem; font-size: 1.15rem; }
 </dialog>
 
 <!-- Delete confirm -->
+<dialog id="d-import">
+  <div class="dbody">
+    <h2>Importar ideias</h2>
+    <p class="muted">Escolha um arquivo JSON no formato <code>{"ideas": [...]}</code> ou uma lista de ideias. Ideias com título igual a uma que já existe são puladas. O arquivo é lido só no navegador e gravado criptografado.</p>
+    <div class="field"><input type="file" id="i-file" accept=".json,application/json"></div>
+    <p id="i-summary" class="muted"></p>
+    <p class="error" id="i-err" role="alert"></p>
+    <div class="dfoot">
+      <button class="btn" type="button" id="i-cancel">Cancelar</button>
+      <button class="btn primary" type="button" id="i-yes" disabled>Importar</button>
+    </div>
+  </div>
+</dialog>
+
 <dialog id="d-confirm">
   <div class="dbody">
     <h2>Excluir ideia?</h2>
@@ -347,6 +361,7 @@ dialog h2 { margin: 0 0 1rem; font-size: 1.15rem; }
     <div class="dfoot" style="justify-content:flex-start">
       <button class="btn" type="button" id="set-token">Trocar token</button>
       <button class="btn" type="button" id="set-pass">Trocar senha</button>
+      <button class="btn" type="button" id="set-import">Importar ideias</button>
       <button class="btn left" type="button" id="set-close" style="margin-left:auto;margin-right:0">Fechar</button>
     </div>
   </div>
@@ -1100,6 +1115,62 @@ $('b-settings').addEventListener('click', () => {
 $('set-close').addEventListener('click', () => $('d-settings').close());
 $('set-token').addEventListener('click', () => { $('d-settings').close(); openTokenDialog(); });
 $('set-pass').addEventListener('click', () => { $('d-settings').close(); $('p-err').textContent = ''; $('d-pass').showModal(); });
+
+/* ---------- import ---------- */
+let importBatch = [];
+// Parses an import file and returns { fresh, skipped } without changing state.
+function prepareImport(text) {
+  let raw;
+  try { raw = JSON.parse(text); } catch (_) { throw new Error('O arquivo não é um JSON válido.'); }
+  const list = Array.isArray(raw) ? raw : (raw && Array.isArray(raw.ideas) ? raw.ideas : null);
+  if (!list) throw new Error('Formato inesperado: use {"ideas": [...]} ou uma lista.');
+  const seen = new Set(S.data.ideas.map(i => fold(i.title.trim())));
+  const ids = new Set(S.data.ideas.map(i => i.id));
+  const fresh = []; let skipped = 0;
+  for (const r of list) {
+    if (!r || !String(r.title || '').trim()) { skipped++; continue; }
+    const key = fold(String(r.title).trim());
+    if (seen.has(key)) { skipped++; continue; }
+    seen.add(key);
+    const idea = normalizeIdea(r);
+    if (ids.has(idea.id)) idea.id = crypto.randomUUID();
+    ids.add(idea.id);
+    fresh.push(idea);
+  }
+  return { fresh, skipped };
+}
+function applyImport(ideas) {
+  if (!ideas.length) return;
+  mutate(() => { S.data.ideas.push(...ideas); });
+}
+$('set-import').addEventListener('click', () => {
+  $('d-settings').close();
+  importBatch = [];
+  $('i-file').value = ''; $('i-summary').textContent = ''; $('i-err').textContent = '';
+  $('i-yes').disabled = true;
+  $('d-import').showModal();
+});
+$('i-file').addEventListener('change', async () => {
+  const f = $('i-file').files[0];
+  $('i-err').textContent = ''; $('i-summary').textContent = ''; $('i-yes').disabled = true; importBatch = [];
+  if (!f) return;
+  try {
+    const { fresh, skipped } = prepareImport(await f.text());
+    importBatch = fresh;
+    $('i-summary').textContent = `${fresh.length} ideia${fresh.length === 1 ? '' : 's'} nova${fresh.length === 1 ? '' : 's'}`
+      + (skipped ? `, ${skipped} pulada${skipped === 1 ? '' : 's'} (título repetido ou vazio)` : '') + '.';
+    $('i-yes').disabled = !fresh.length;
+  } catch (e) { $('i-err').textContent = e.message; }
+});
+$('i-cancel').addEventListener('click', () => $('d-import').close());
+$('i-yes').addEventListener('click', () => {
+  const n = importBatch.length;
+  applyImport(importBatch);
+  importBatch = [];
+  $('i-file').value = '';
+  $('d-import').close();
+  toast(`${n} ideia${n === 1 ? '' : 's'} importada${n === 1 ? '' : 's'}. Pode apagar o arquivo JSON do computador.`);
+});
 
 function openTokenDialog() {
   $('t-token').value = ''; $('t-err').textContent = '';
