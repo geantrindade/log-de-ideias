@@ -194,6 +194,8 @@ dialog {
 dialog::backdrop { background: rgba(10, 12, 16, .7); }
 dialog form, dialog .dbody { padding: 1.3rem 1.4rem; }
 dialog h2 { margin: 0 0 1rem; font-size: 1.15rem; }
+.ichanges { margin: .25rem 0 0; padding-left: 1.2rem; max-height: 14rem; overflow-y: auto; font-size: .9rem; }
+.ichanges:empty { display: none; }
 .dfoot { display: flex; gap: .5rem; justify-content: flex-end; flex-wrap: wrap; margin-top: 1rem; }
 .dfoot .left { margin-right: auto; }
 .radios { display: flex; flex-wrap: wrap; gap: .35rem; }
@@ -375,9 +377,10 @@ dialog h2 { margin: 0 0 1rem; font-size: 1.15rem; }
 <dialog id="d-import">
   <div class="dbody">
     <h2>Importar ideias</h2>
-    <p class="muted">Escolha um arquivo JSON no formato <code>{"ideas": [...]}</code> ou uma lista de ideias. Ideias com título igual a uma que já existe são puladas. O arquivo é lido só no navegador e gravado criptografado.</p>
+    <p class="muted">Escolha um arquivo JSON no formato <code>{"ideas": [...]}</code> ou uma lista de ideias. Uma ideia com o mesmo título (ou o mesmo <code>id</code>) de uma que já existe é atualizada: os campos que vierem no arquivo substituem os atuais, e os que faltarem ficam como estão. O arquivo é lido só no navegador e gravado criptografado.</p>
     <div class="field"><input type="file" id="i-file" accept=".json,application/json"></div>
     <p id="i-summary" class="muted"></p>
+    <ul id="i-changes" class="muted ichanges"></ul>
     <p class="error" id="i-err" role="alert"></p>
     <div class="dfoot">
       <button class="btn" type="button" id="i-cancel">Cancelar</button>
@@ -600,27 +603,73 @@ function arrangeQueue(ideas, weights, filters, sortBy) {
   return { grouped: anyFilter(filters), items };
 }
 
+// Fields an import may change on an idea that already exists.
+const MERGE_FIELDS = ['title', 'category', 'tags', 'description', 'prior', 'effortWeeks',
+  'novelty', 'excitement', 'feasibility', 'phase', 'nextStep'];
+
 // Parses an import file against existing ideas. Old formats are accepted.
+// An entry matches an existing idea by id, else by title (accent/case-insensitive).
+// Matches become updates holding only the fields present in the file that differ.
+// Returns { fresh, updates: [{ id, title, changes, fields }], unchanged, skipped }.
 function parseImport(text, existing) {
   let raw;
   try { raw = JSON.parse(text); } catch (_) { throw new Error('O arquivo não é um JSON válido.'); }
   const list = Array.isArray(raw) ? raw : (raw && Array.isArray(raw.ideas) ? raw.ideas : null);
   if (!list) throw new Error('Formato inesperado: use {"ideas": [...]} ou uma lista.');
-  const seen = new Set(existing.map(i => fold(i.title.trim())));
-  const ids = new Set(existing.map(i => i.id));
-  const fresh = []; let skipped = 0;
+  const byTitle = new Map(existing.map(i => [fold(i.title.trim()), i]));
+  const byId = new Map(existing.map(i => [i.id, i]));
+  const ids = new Set(byId.keys());
+  const seen = new Set();   // titles and ids already handled in this file
+  const fresh = [], updates = []; let skipped = 0, unchanged = 0;
   for (const r of list) {
     if (!r || typeof r !== 'object' || !String(r.title || '').trim()) { skipped++; continue; }
     const key = fold(String(r.title).trim());
-    if (seen.has(key)) { skipped++; continue; }
-    seen.add(key);
+    const match = (typeof r.id === 'string' && byId.get(r.id)) || byTitle.get(key);
+    const mark = match ? 'id:' + match.id : 't:' + key;
+    if (seen.has(mark)) { skipped++; continue; }
+    seen.add(mark);
+    if (match) {
+      const picked = {};
+      for (const f of MERGE_FIELDS) if (r[f] !== undefined && r[f] !== null && validForMerge(f, r[f])) picked[f] = r[f];
+      const merged = normalizeIdea({ ...match, ...picked });
+      const changes = {};
+      for (const f of Object.keys(picked)) {
+        if (f === 'title' && fold(merged.title) === fold(match.title)) continue;   // same title, other accents/case
+        if (JSON.stringify(merged[f]) !== JSON.stringify(match[f])) changes[f] = merged[f];
+      }
+      const fields = Object.keys(changes);
+      if (fields.length) updates.push({ id: match.id, title: match.title, changes, fields });
+      else unchanged++;
+      continue;
+    }
     const { cost, ...rest } = r;   // retired field: ignored on import
     const idea = normalizeIdea(rest);
     if (ids.has(idea.id)) idea.id = crypto.randomUUID();
     ids.add(idea.id);
     fresh.push(idea);
   }
-  return { fresh, skipped };
+  return { fresh, updates, unchanged, skipped };
+}
+// On an update, an invalid value is ignored instead of resetting the field to its default.
+function validForMerge(f, v) {
+  if (f === 'phase') return PHASES.includes(v);
+  if (f === 'category') return CATEGORIES.includes(v);
+  if (f === 'tags') return Array.isArray(v);
+  if (f === 'title') return !!String(v).trim();
+  if (f === 'effortWeeks') return Number.isFinite(Number(v)) && Number(v) > 0;
+  if (f === 'novelty' || f === 'excitement' || f === 'feasibility') return Number.isFinite(Number(v));
+  return true;
+}
+// Applies parseImport updates in place. Returns how many ideas changed.
+function applyUpdates(ideas, updates, now) {
+  let n = 0;
+  for (const u of updates) {
+    const idea = ideas.find(i => i.id === u.id);
+    if (!idea) continue;
+    Object.assign(idea, u.changes, { updatedAt: now });
+    n++;
+  }
+  return n;
 }
 function fold(s) { return String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(); }
 /* CORE-END */
@@ -1310,41 +1359,54 @@ $('set-token').addEventListener('click', () => { $('d-settings').close(); openTo
 $('set-pass').addEventListener('click', () => { $('d-settings').close(); $('p-err').textContent = ''; $('d-pass').showModal(); });
 
 /* ---------- import ---------- */
-let importBatch = [];
-// Parses an import file and returns { fresh, skipped } without changing state.
+let importBatch = null;
+const FIELD_LABEL = { title: 'título', category: 'categoria', tags: 'tópicos', description: 'descrição',
+  prior: 'trabalhos parecidos', effortWeeks: 'tempo', novelty: 'ineditismo', excitement: 'empolgação',
+  feasibility: 'facilidade', phase: 'fase', nextStep: 'próximo passo' };
+const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
 // Parses an import file without changing state (logic in parseImport, CORE block).
 function prepareImport(text) { return parseImport(text, S.data.ideas); }
-function applyImport(ideas) {
-  if (!ideas.length) return;
-  mutate(() => { S.data.ideas.push(...ideas); });
+function applyImport(batch) {
+  if (!batch.fresh.length && !batch.updates.length) return;
+  mutate(() => {
+    applyUpdates(S.data.ideas, batch.updates, new Date().toISOString());
+    S.data.ideas.push(...batch.fresh);
+  });
+}
+function resetImport() {
+  importBatch = null;
+  $('i-summary').textContent = ''; $('i-err').textContent = ''; $('i-changes').innerHTML = '';
+  $('i-yes').disabled = true;
 }
 $('set-import').addEventListener('click', () => {
   $('d-settings').close();
-  importBatch = [];
-  $('i-file').value = ''; $('i-summary').textContent = ''; $('i-err').textContent = '';
-  $('i-yes').disabled = true;
+  $('i-file').value = ''; resetImport();
   $('d-import').showModal();
 });
 $('i-file').addEventListener('change', async () => {
   const f = $('i-file').files[0];
-  $('i-err').textContent = ''; $('i-summary').textContent = ''; $('i-yes').disabled = true; importBatch = [];
+  resetImport();
   if (!f) return;
   try {
-    const { fresh, skipped } = prepareImport(await f.text());
-    importBatch = fresh;
-    $('i-summary').textContent = `${fresh.length} ideia${fresh.length === 1 ? '' : 's'} nova${fresh.length === 1 ? '' : 's'}`
-      + (skipped ? `, ${skipped} pulada${skipped === 1 ? '' : 's'} (título repetido ou vazio)` : '') + '.';
-    $('i-yes').disabled = !fresh.length;
+    const b = prepareImport(await f.text());
+    importBatch = b;
+    const parts = [plural(b.fresh.length, 'ideia nova', 'ideias novas'), plural(b.updates.length, 'atualizada', 'atualizadas')];
+    if (b.unchanged) parts.push(plural(b.unchanged, 'já igual', 'já iguais'));
+    if (b.skipped) parts.push(plural(b.skipped, 'pulada (sem título ou repetida no arquivo)', 'puladas (sem título ou repetidas no arquivo)'));
+    $('i-summary').textContent = parts.join(', ') + '.';
+    $('i-changes').innerHTML = b.updates.map(u =>
+      `<li><b>${esc(u.title)}</b>: ${esc(u.fields.map(k => FIELD_LABEL[k] || k).join(', '))}</li>`).join('');
+    $('i-yes').disabled = !b.fresh.length && !b.updates.length;
   } catch (e) { $('i-err').textContent = e.message; }
 });
 $('i-cancel').addEventListener('click', () => $('d-import').close());
 $('i-yes').addEventListener('click', () => {
-  const n = importBatch.length;
+  if (!importBatch) return;
+  const nNew = importBatch.fresh.length, nUpd = importBatch.updates.length;
   applyImport(importBatch);
-  importBatch = [];
-  $('i-file').value = '';
+  $('i-file').value = ''; resetImport();
   $('d-import').close();
-  toast(`${n} ideia${n === 1 ? '' : 's'} importada${n === 1 ? '' : 's'}. Pode apagar o arquivo JSON do computador.`);
+  toast(`${plural(nNew, 'ideia nova', 'ideias novas')}, ${plural(nUpd, 'atualizada', 'atualizadas')}. Pode apagar o arquivo JSON do computador.`);
 });
 
 function openTokenDialog() {

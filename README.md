@@ -62,7 +62,15 @@ the new password. Older commits remain decryptable with the old password.
 
 ⚙ settings → **Importar ideias** reads a local JSON file (`{"ideas": [...]}` or a plain list, same
 fields as the data model; only `title` is required; files in the old format, with `cost` and without
-`feasibility`, are accepted). Ideas whose title already exists are skipped.
+`feasibility`, are accepted).
+
+An entry that matches an existing idea, by `id` or else by title (ignoring case and accents), updates it.
+Only the fields present in the file replace the stored ones (`title`, `category`, `tags`, `description`,
+`prior`, `effortWeeks`, `novelty`, `excitement`, `feasibility`, `phase`, `nextStep`), invalid values are
+ignored, and `id`, `createdAt` and unknown fields are kept. The dialog lists which ideas and fields will
+change before anything is saved. So a file can carry just `{"title": "...", "novelty": 5, "feasibility": 2}`
+to re-rate an idea, for example after a literature review.
+
 The file is read only in the browser and saved encrypted in a single `Update ideas` commit.
 Keep import files out of this repository and delete them afterwards.
 

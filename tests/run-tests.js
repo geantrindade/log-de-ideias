@@ -12,7 +12,7 @@ const core = html.slice(html.indexOf('/* CORE-START'), html.indexOf('/* CORE-END
 if (!core) throw new Error('CORE block not found');
 
 const ctx = vm.createContext({ crypto: globalThis.crypto, TextEncoder, TextDecoder, atob, btoa, Uint8Array, JSON, Math, Number, String, Array, Set, Date, Error });
-vm.runInContext(core + '\n;globalThis.__core = { textToB64, b64ToText, newKeyMaterial, encryptWith, parseEnvelope, decryptWithPassword, decryptWithKey, scoreIdea, arrangeQueue, parseImport, feas, feasRated, normalizeIdea, normalizeData, fold, ITERATIONS };', ctx);
+vm.runInContext(core + '\n;globalThis.__core = { textToB64, b64ToText, newKeyMaterial, encryptWith, parseEnvelope, decryptWithPassword, decryptWithKey, scoreIdea, arrangeQueue, parseImport, applyUpdates, feas, feasRated, normalizeIdea, normalizeData, fold, ITERATIONS };', ctx);
 const C = ctx.__core;
 
 let passed = 0, failed = 0;
@@ -233,13 +233,48 @@ async function test(name, fn) {
     assert.equal(fresh[2].phase, 'inbox');
   });
 
-  await test('import: skips duplicates (accent/case-insensitive), empty titles and bad JSON', () => {
+  await test('import: same title (accent/case-insensitive) with nothing new is unchanged; empty titles and bad JSON', () => {
     const existing = [C.normalizeIdea({ id: 'e1', title: 'Ação Teste' })];
-    const { fresh, skipped } = C.parseImport(JSON.stringify([{ title: 'acao teste' }, { title: '' }, null, { id: 'e1', title: 'Nova' }]), existing);
-    assert.equal(fresh.length, 1); assert.equal(skipped, 3);
-    assert.notEqual(fresh[0].id, 'e1');
+    const r = C.parseImport(JSON.stringify([{ title: 'acao teste' }, { title: '' }, null, { title: 'Nova' }]), existing);
+    assert.equal(r.fresh.length, 1); assert.equal(r.updates.length, 0);
+    assert.equal(r.unchanged, 1); assert.equal(r.skipped, 2);
     assert.throws(() => C.parseImport('{', existing), /JSON/);
     assert.throws(() => C.parseImport('{"x":1}', existing), /Formato/);
+  });
+
+  await test('import: matching title updates only the fields present and different', () => {
+    const existing = [C.normalizeIdea({ id: 'e1', title: 'Ideia Fictícia', novelty: 2, excitement: 4,
+      description: 'texto antigo', tags: ['a'], cost: 2, createdAt: '2026-01-01T00:00:00Z' })];
+    const r = C.parseImport(JSON.stringify({ ideas: [
+      { title: 'ideia ficticia', novelty: 5, excitement: 4, feasibility: 2, prior: 'revisão fictícia', cost: 9 },
+    ] }), existing);
+    assert.equal(r.fresh.length, 0); assert.equal(r.unchanged, 0);
+    assert.equal(r.updates.length, 1);
+    const u = r.updates[0];
+    assert.equal(u.id, 'e1');
+    assert.deepEqual([...u.fields].sort(), ['feasibility', 'novelty', 'prior']);   // excitement equal; title same after folding; cost ignored
+    const ideas = existing.map(i => ({ ...i }));
+    assert.equal(C.applyUpdates(ideas, r.updates, '2026-05-05T00:00:00Z'), 1);
+    const i = ideas[0];
+    assert.equal(i.novelty, 5); assert.equal(i.feasibility, 2); assert.equal(i.prior, 'revisão fictícia');
+    assert.equal(i.description, 'texto antigo'); assert.deepEqual([...i.tags], ['a']);
+    assert.equal(i.title, 'Ideia Fictícia'); assert.equal(i.cost, 2);
+    assert.equal(i.createdAt, '2026-01-01T00:00:00Z'); assert.equal(i.updatedAt, '2026-05-05T00:00:00Z');
+  });
+
+  await test('import: match by id can rename; values are normalized; duplicates in file skipped', () => {
+    const existing = [C.normalizeIdea({ id: 'e1', title: 'Velha' }), C.normalizeIdea({ id: 'e2', title: 'Outra', phase: 'doing' })];
+    const r = C.parseImport(JSON.stringify([
+      { id: 'e1', title: 'Nome novo', novelty: 9 },
+      { title: 'Outra', phase: 'inexistente', effortWeeks: 'x', excitement: 1 },
+      { title: 'outra', excitement: 2 },
+    ]), existing);
+    assert.equal(r.updates.length, 2); assert.equal(r.skipped, 1);
+    const u1 = r.updates.find(u => u.id === 'e1');
+    assert.equal(u1.changes.title, 'Nome novo'); assert.equal(u1.changes.novelty, 5);
+    const u2 = r.updates.find(u => u.id === 'e2');
+    assert.deepEqual([...u2.fields], ['excitement']);   // invalid phase and time are ignored, not reset
+    assert.equal(u2.changes.excitement, 1);
   });
 
   await test('defaults when only title is given', () => {
