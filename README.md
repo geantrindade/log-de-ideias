@@ -61,7 +61,8 @@ the new password. Older commits remain decryptable with the old password.
 ## Importing ideas
 
 ⚙ settings → **Importar ideias** reads a local JSON file (`{"ideas": [...]}` or a plain list, same
-fields as the data model; only `title` is required). Ideas whose title already exists are skipped.
+fields as the data model; only `title` is required; files in the old format, with `cost` and without
+`feasibility`, are accepted). Ideas whose title already exists are skipped.
 The file is read only in the browser and saved encrypted in a single `Update ideas` commit.
 Keep import files out of this repository and delete them afterwards.
 
@@ -76,25 +77,46 @@ If `ideias.enc` exists but `cofre.enc` does not, the setup screen refuses to con
 overwritten. Either restore `cofre.enc` from the commit history, or delete `ideias.enc` from the
 repository yourself if you are sure you want to start over.
 
-## Score
+## Score, filters and weights
 
-The "O que faz sentido agora?" panel sets `horizon` (weeks: 0.5, 4, 12, 26), `budget` (0–3) and
-`wNov` (1, 2, 4). For each idea:
+Each idea has three 1–5 ratings: novelty (`novelty`), excitement (`excitement`) and ease
+(`feasibility`, "Facilidade": 1 is very hard or depends on things you do not have, 5 is something you
+can start today). Ideas saved before `feasibility` existed count as 3 and show "não avaliada" until
+edited; the file is not rewritten just to fill it in.
+
+The **Pesos da nota** panel (right side) sets one weight per criterion, 0–10, default 5:
 
 ```
-base  = (wNov * novelty + 2 * excitement) / (wNov + 2) / 5
-tfit  = effortWeeks <= horizon ? 1 : max(0.25, horizon / effortWeeks)
-over  = cost - budget
-rfit  = over <= 0 ? 1 : (over == 1 ? 0.6 : 0.3)
-score = round(100 * base * tfit * rfit)
+if wNov + wExc + wFeas == 0: use 1, 1, 1
+score = round(100 * (wNov*novelty + wExc*excitement + wFeas*feasibility) / (5 * (wNov + wExc + wFeas)))
 ```
 
-The panel choice is stored per device in `localStorage`.
+Time does not enter the score. The **Filtros** panel (top) has thresholds for available time
+(`effortWeeks <= value`), novelty, excitement and ease (`>= value`). Thresholds do not hide ideas:
+they split the queue into "Atendem aos filtros" and "Não atendem", and picking one switches
+"Ordenar por" to that criterion (time ascending, the others descending, score as tie-breaker).
+Category, phase, topic and search filters do hide ideas.
+
+Weights, thresholds and sort order are stored per device in `localStorage`, never in the repository.
+
+## Phases
+
+| Stored value | Label | Meaning |
+|---|---|---|
+| `inbox` | Anotada | Written down so it is not forgotten, not analysed yet |
+| `eval` | Explorando | Checking whether it is worth doing; can still be dropped |
+| `doing` | Fazendo | Decided to do it and working on it |
+| `done` | Feita | Finished |
+| `archived` | Arquivada | Explored and dropped, kept as a record |
+
+The phase filter defaults to "Ativas" (everything except archived); archived ideas only show under
+"Arquivada". Unknown phase values are treated as `inbox`. The retired `cost` field is no longer read
+or shown, but it is kept in stored ideas.
 
 ## Tests
 
-`tests/run-tests.js` checks the crypto (round trip, wrong password, tampering, accents) and the score
-formula against fixed cases, using the code inside `index.html` and fictitious data only:
+`tests/run-tests.js` checks the crypto (round trip, wrong password, tampering, accents), the score,
+the threshold filters and ordering, the data model and the import, against fixed cases, using the code inside `index.html` and fictitious data only:
 
 ```
 node tests/run-tests.js
