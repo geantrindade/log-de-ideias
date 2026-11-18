@@ -1,0 +1,1166 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://api.github.com; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' data:; base-uri 'none'; form-action 'none'; object-src 'none'">
+<meta name="color-scheme" content="dark">
+<title>Log de ideias</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231B1E24'/%3E%3Ccircle cx='16' cy='13' r='7' fill='%238FA2FF'/%3E%3Crect x='12' y='21' width='8' height='5' rx='2' fill='%23A3ABBA'/%3E%3C/svg%3E">
+<style>
+:root {
+  --bg: #1B1E24; --surface: #23272F; --surface-2: #1F232A; --line: #343A46;
+  --field: #4A5160; --text: #E6E8EC; --text-2: #A3ABBA; --accent: #8FA2FF;
+  --on-accent: #14161B; --warn: #F0A070; --danger: #F07070;
+  --c-exp: #8FA2FF; --c-app: #4FD1B5; --c-soft: #C4A7FF; --c-jogo: #F5A25D; --c-outro: #A3ABBA;
+  --radius: 10px;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--bg); color: var(--text);
+  font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+[hidden] { display: none !important; }
+a { color: var(--accent); }
+button, input, select, textarea { font: inherit; color: inherit; }
+input, select, textarea {
+  background: var(--surface-2); border: 1px solid var(--field); border-radius: 8px;
+  padding: .55rem .7rem; width: 100%;
+}
+textarea { resize: vertical; min-height: 4.5rem; }
+input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-visible, .row:focus-visible {
+  outline: 2px solid var(--accent); outline-offset: 1px;
+}
+label { display: block; font-size: .85rem; color: var(--text-2); margin-bottom: .3rem; }
+.btn {
+  background: var(--surface); border: 1px solid var(--field); border-radius: 8px;
+  padding: .5rem .9rem; cursor: pointer; white-space: nowrap;
+}
+.btn:hover { border-color: var(--text-2); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); font-weight: 600; }
+.btn.primary:hover { filter: brightness(1.08); }
+.btn.danger { border-color: var(--danger); color: var(--danger); }
+.btn.small { padding: .3rem .65rem; font-size: .85rem; }
+.btn:disabled { opacity: .55; cursor: progress; }
+.muted { color: var(--text-2); }
+.error { color: var(--danger); min-height: 1.3em; margin: .5rem 0 0; }
+.warn { color: var(--warn); }
+
+/* ---------- centered card screens ---------- */
+.center { min-height: 100vh; display: grid; place-items: center; padding: 1.5rem 1rem; }
+.card {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 14px;
+  padding: 1.6rem; width: 100%; max-width: 420px;
+}
+.card.wide { max-width: 560px; }
+.card h1 { font-size: 1.35rem; margin: 0 0 .3rem; }
+.card p { margin: .3rem 0 1rem; }
+.field { margin-bottom: .9rem; }
+.check { display: flex; align-items: center; gap: .5rem; color: var(--text-2); margin: .2rem 0 1rem; font-size: .9rem; }
+.check input { width: auto; }
+.hint { font-size: .85rem; color: var(--text-2); margin-top: .3rem; }
+.steps { margin: .2rem 0 1rem 1.1rem; padding: 0; color: var(--text-2); font-size: .9rem; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; }
+
+/* ---------- app shell ---------- */
+header.top {
+  position: sticky; top: 0; z-index: 5; background: var(--bg);
+  border-bottom: 1px solid var(--line);
+  display: flex; align-items: center; gap: .75rem; padding: .7rem 1.25rem; flex-wrap: wrap;
+}
+.brand { font-weight: 700; font-size: 1.05rem; margin-right: .25rem; }
+.search { flex: 1 1 220px; max-width: 420px; }
+.top .spacer { flex: 1; }
+.save-status { font-size: .85rem; color: var(--text-2); display: flex; align-items: center; gap: .4rem; }
+.save-status.err { color: var(--danger); }
+.dot { width: .5rem; height: .5rem; border-radius: 50%; background: var(--text-2); display: inline-block; }
+.save-status.ok .dot { background: var(--c-app); }
+.save-status.busy .dot { background: var(--accent); animation: pulse 1s infinite; }
+.save-status.err .dot { background: var(--danger); }
+@keyframes pulse { 50% { opacity: .3; } }
+
+.banner {
+  margin: 1rem 1.25rem 0; padding: .75rem 1rem; border-radius: var(--radius);
+  border: 1px solid var(--warn); background: #2a2420; color: var(--text);
+  display: flex; gap: .75rem; align-items: center; flex-wrap: wrap;
+}
+.banner .msg { flex: 1 1 260px; }
+
+.layout { display: grid; grid-template-columns: 230px 1fr; gap: 1.25rem; padding: 1.25rem; max-width: 1400px; margin: 0 auto; }
+aside.side { display: flex; flex-direction: column; gap: 1.25rem; }
+.side h2, .panel h2 { font-size: .78rem; text-transform: uppercase; letter-spacing: .06em; color: var(--text-2); margin: 0 0 .5rem; font-weight: 600; }
+.flist { display: flex; flex-direction: column; gap: .15rem; }
+.fitem {
+  display: flex; align-items: center; gap: .5rem; width: 100%; text-align: left;
+  background: none; border: 1px solid transparent; border-radius: 7px; padding: .35rem .55rem; cursor: pointer;
+}
+.fitem:hover { background: var(--surface); }
+.fitem.on { background: var(--surface); border-color: var(--line); }
+.fitem .n { margin-left: auto; color: var(--text-2); font-size: .85rem; font-variant-numeric: tabular-nums; }
+.swatch { width: .6rem; height: .6rem; border-radius: 3px; flex: none; }
+.tags { display: flex; flex-wrap: wrap; gap: .35rem; }
+.tagbtn {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 999px;
+  padding: .15rem .6rem; font-size: .82rem; cursor: pointer; color: var(--text-2);
+}
+.tagbtn.on { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+
+main { min-width: 0; display: flex; flex-direction: column; gap: 1rem; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 1rem 1.1rem; }
+.panel-title { font-weight: 650; margin: 0 0 .75rem; font-size: 1rem; }
+.ctx { display: flex; flex-wrap: wrap; gap: 1rem 1.75rem; }
+.seg { display: inline-flex; border: 1px solid var(--field); border-radius: 8px; overflow: hidden; flex-wrap: wrap; }
+.seg button { background: none; border: 0; padding: .4rem .75rem; cursor: pointer; color: var(--text-2); border-right: 1px solid var(--line); }
+.seg button:last-child { border-right: 0; }
+.seg button.on { background: var(--accent); color: var(--on-accent); font-weight: 600; }
+
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+.stat { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: .8rem 1rem; }
+.stat .v { font-size: 1.6rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.stat .l { color: var(--text-2); font-size: .85rem; }
+
+.queue { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+.cols, .row {
+  display: grid; align-items: center; gap: .75rem;
+  grid-template-columns: 2rem minmax(0, 1fr) 7.5rem 6.5rem 5.5rem 4.6rem 4.6rem 7rem;
+  padding: .65rem 1rem;
+}
+.cols { font-size: .75rem; text-transform: uppercase; letter-spacing: .05em; color: var(--text-2); border-bottom: 1px solid var(--line); }
+.row { border-bottom: 1px solid var(--line); cursor: pointer; }
+.row:hover { background: #272C35; }
+.item:last-child .row { border-bottom: 0; }
+.item.open .row { background: #272C35; border-bottom-color: transparent; }
+.pos { color: var(--text-2); font-variant-numeric: tabular-nums; }
+.title { font-weight: 600; overflow-wrap: anywhere; }
+.sub { display: flex; flex-wrap: wrap; gap: .35rem; margin-top: .25rem; align-items: center; }
+.chip { font-size: .75rem; padding: .05rem .5rem; border-radius: 999px; border: 1px solid currentColor; white-space: nowrap; }
+.tag { font-size: .75rem; color: var(--text-2); }
+.meta { font-size: .88rem; }
+.meta .ml { display: none; color: var(--text-2); font-size: .75rem; margin-right: .3rem; }
+.nofit { display: block; font-size: .72rem; color: var(--warn); }
+.dots { letter-spacing: .08em; color: var(--accent); white-space: nowrap; }
+.dots .off { color: var(--line); }
+.score { display: flex; align-items: center; gap: .5rem; }
+.score .num { font-weight: 700; width: 2rem; text-align: right; font-variant-numeric: tabular-nums; }
+.bar { flex: 1; height: .45rem; background: var(--surface-2); border-radius: 99px; overflow: hidden; border: 1px solid var(--line); }
+.bar > i { display: block; height: 100%; background: var(--accent); }
+.empty { padding: 2rem 1rem; text-align: center; color: var(--text-2); }
+
+.detail { background: var(--surface-2); border-bottom: 1px solid var(--line); padding: 1rem 1rem 1.1rem 3.75rem; display: grid; gap: .9rem; }
+.detail .acts { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+.phasebtns { display: inline-flex; flex-wrap: wrap; gap: .35rem; }
+.phasebtns button.on { background: var(--accent); border-color: var(--accent); color: var(--on-accent); font-weight: 600; }
+.detail h3 { font-size: .75rem; text-transform: uppercase; letter-spacing: .06em; color: var(--text-2); margin: 0 0 .25rem; font-weight: 600; }
+.detail .txt { white-space: pre-wrap; overflow-wrap: anywhere; margin: 0; }
+.detail .calc { font-size: .9rem; color: var(--text-2); margin: 0; }
+.detail .calc b { color: var(--text); }
+.dgrid { display: grid; grid-template-columns: 1fr 1fr; gap: .9rem 1.5rem; }
+
+/* ---------- dialogs ---------- */
+dialog {
+  background: var(--surface); color: var(--text); border: 1px solid var(--line); border-radius: 14px;
+  padding: 0; width: min(640px, calc(100vw - 2rem)); max-height: calc(100vh - 2rem);
+}
+dialog::backdrop { background: rgba(10, 12, 16, .7); }
+dialog form, dialog .dbody { padding: 1.3rem 1.4rem; }
+dialog h2 { margin: 0 0 1rem; font-size: 1.15rem; }
+.dfoot { display: flex; gap: .5rem; justify-content: flex-end; flex-wrap: wrap; margin-top: 1rem; }
+.dfoot .left { margin-right: auto; }
+.radios { display: flex; flex-wrap: wrap; gap: .35rem; }
+.radios label { margin: 0; }
+.radios input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.radios span {
+  display: inline-block; border: 1px solid var(--field); border-radius: 8px; padding: .3rem .65rem;
+  cursor: pointer; color: var(--text-2); font-size: .88rem;
+}
+.radios input:checked + span { background: var(--accent); border-color: var(--accent); color: var(--on-accent); font-weight: 600; }
+.radios input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+.toast {
+  position: fixed; left: 50%; bottom: 1.25rem; transform: translateX(-50%); z-index: 50;
+  background: var(--surface); border: 1px solid var(--warn); border-radius: 10px; padding: .7rem 1rem;
+  max-width: calc(100vw - 2rem); box-shadow: 0 6px 24px rgba(0,0,0,.4);
+}
+
+/* ---------- mobile ---------- */
+@media (max-width: 860px) {
+  header.top { padding: .6rem 1rem; }
+  .search { order: 5; flex-basis: 100%; max-width: none; }
+  .layout { grid-template-columns: 1fr; padding: 1rem; }
+  aside.side { gap: .9rem; }
+  .flist { flex-direction: row; flex-wrap: wrap; gap: .35rem; }
+  .fitem { width: auto; border-color: var(--line); border-radius: 999px; padding: .25rem .7rem; font-size: .88rem; }
+  .fitem.on { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+  .fitem.on .n { color: var(--on-accent); }
+  .fitem .n { margin-left: .2rem; }
+  .banner { margin: 1rem 1rem 0; }
+  .cols { display: none; }
+  .row { display: flex; flex-wrap: wrap; gap: .4rem .9rem; padding: .8rem 1rem; }
+  .row .pos { width: 1.6rem; }
+  .row .main { flex: 1 1 calc(100% - 2.6rem); }
+  .row .meta { flex: 0 0 auto; }
+  .meta .ml { display: inline; }
+  .nofit { display: inline; margin-left: .3rem; }
+  .row .score { flex: 1 1 100%; padding-left: 2.6rem; }
+  .detail { padding: 1rem; }
+  .dgrid, .grid2 { grid-template-columns: 1fr; }
+}
+@media (max-width: 480px) {
+  .stats { gap: .5rem; }
+  .stat { padding: .6rem .7rem; }
+  .stat .v { font-size: 1.3rem; }
+  .ctx { gap: .8rem; }
+}
+</style>
+</head>
+<body>
+
+<!-- Loading -->
+<section id="v-loading" class="center"><p class="muted">Carregando…</p></section>
+
+<!-- Fatal error -->
+<section id="v-fatal" class="center" hidden>
+  <div class="card"><h1>Não foi possível abrir</h1><p id="fatal-msg" class="muted"></p>
+    <button class="btn" type="button" onclick="location.reload()">Tentar de novo</button></div>
+</section>
+
+<!-- Initial setup -->
+<section id="v-setup" class="center" hidden>
+  <form id="setup-form" class="card wide" autocomplete="off" novalidate>
+    <h1>Configuração inicial</h1>
+    <p class="muted">Feito uma vez só. O token fica guardado no repositório, criptografado com a sua senha.</p>
+    <div class="field">
+      <label for="s-token">Token do GitHub</label>
+      <input id="s-token" type="password" autocomplete="off" spellcheck="false" required>
+      <div class="hint"><a id="s-token-link" href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener noreferrer">Criar token fine-grained no GitHub</a></div>
+      <ol class="steps">
+        <li>Em "Repository access", escolha "Only select repositories" e marque só este repositório.</li>
+        <li>Em "Repository permissions", ponha "Contents" em "Read and write".</li>
+        <li>Não marque mais nada.</li>
+      </ol>
+    </div>
+    <div class="grid2">
+      <div class="field"><label for="s-owner">Dono (owner)</label><input id="s-owner" spellcheck="false" required></div>
+      <div class="field"><label for="s-repo">Repositório</label><input id="s-repo" spellcheck="false" required></div>
+    </div>
+    <div class="field">
+      <label for="s-pass">Senha</label>
+      <input id="s-pass" type="password" autocomplete="new-password" required>
+      <div class="hint">Mínimo de 16 caracteres. Recomendado: uma frase de 5 palavras ou mais. Não há como recuperar a senha.</div>
+    </div>
+    <div class="field"><label for="s-pass2">Confirme a senha</label><input id="s-pass2" type="password" autocomplete="new-password" required></div>
+    <button class="btn primary" type="submit" id="s-submit">Configurar</button>
+    <p class="error" id="s-err" role="alert"></p>
+  </form>
+</section>
+
+<!-- Password -->
+<section id="v-login" class="center" hidden>
+  <form id="login-form" class="card" novalidate>
+    <h1>Log de ideias</h1>
+    <p class="muted" id="login-note">Digite a senha para abrir.</p>
+    <div class="field"><label for="l-pass">Senha</label>
+      <input id="l-pass" type="password" autocomplete="current-password" required autofocus></div>
+    <label class="check"><input type="checkbox" id="l-remember"> Lembrar neste dispositivo</label>
+    <button class="btn primary" type="submit" id="l-submit" style="width:100%">Entrar</button>
+    <p class="error" id="l-err" role="alert"></p>
+  </form>
+</section>
+
+<!-- Dashboard -->
+<section id="v-app" hidden>
+  <header class="top">
+    <span class="brand">Log de ideias</span>
+    <input class="search" id="q" type="search" placeholder="Buscar por título ou tópico" aria-label="Buscar">
+    <span class="spacer"></span>
+    <span class="save-status" id="save-status" aria-live="polite"></span>
+    <button class="btn primary" type="button" id="b-new">Nova ideia</button>
+    <button class="btn" type="button" id="b-settings" title="Configurações" aria-label="Configurações">⚙</button>
+    <button class="btn" type="button" id="b-lock">Bloquear</button>
+  </header>
+  <div class="banner" id="banner" hidden><span class="msg" id="banner-msg"></span><button class="btn small" type="button" id="banner-btn">Trocar token</button></div>
+  <div class="layout">
+    <aside class="side" id="side"></aside>
+    <main>
+      <section class="panel">
+        <p class="panel-title">O que faz sentido agora?</p>
+        <div class="ctx" id="ctx"></div>
+      </section>
+      <section class="stats" id="stats"></section>
+      <section class="queue" id="queue"></section>
+    </main>
+  </div>
+</section>
+
+<!-- Idea form -->
+<dialog id="d-idea">
+  <form id="idea-form" novalidate>
+    <h2 id="idea-form-title">Nova ideia</h2>
+    <div class="field"><label for="f-title">Título *</label><input id="f-title" maxlength="200" required></div>
+    <div class="field"><label>Categoria</label><div class="radios" id="f-category"></div></div>
+    <div class="field"><label for="f-tags">Tópicos (separados por vírgula)</label><input id="f-tags" spellcheck="false"></div>
+    <div class="field"><label for="f-desc">Descrição</label><textarea id="f-desc" rows="3"></textarea></div>
+    <div class="field"><label for="f-prior">O que já existe parecido</label><textarea id="f-prior" rows="2"></textarea></div>
+    <div class="grid2">
+      <div class="field"><label for="f-effort">Esforço estimado (semanas)</label>
+        <input id="f-effort" type="number" min="0.5" step="0.5" inputmode="decimal">
+        <div class="hint">Fim de semana = 0,5 · 1 mês = 4 · 3 meses = 12 · 6 meses = 26</div></div>
+      <div class="field"><label>Recursos necessários</label><div class="radios" id="f-cost"></div></div>
+    </div>
+    <div class="grid2">
+      <div class="field"><label>Ineditismo (1 a 5)</label><div class="radios" id="f-novelty"></div></div>
+      <div class="field"><label>Empolgação (1 a 5)</label><div class="radios" id="f-excitement"></div></div>
+    </div>
+    <div class="field"><label>Fase</label><div class="radios" id="f-phase"></div></div>
+    <div class="field"><label for="f-next">Próximo passo</label><input id="f-next" maxlength="300"></div>
+    <p class="error" id="f-err" role="alert"></p>
+    <div class="dfoot">
+      <button class="btn danger left" type="button" id="f-delete">Excluir</button>
+      <button class="btn" type="button" id="f-cancel">Cancelar</button>
+      <button class="btn primary" type="submit">Salvar</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- Delete confirm -->
+<dialog id="d-confirm">
+  <div class="dbody">
+    <h2>Excluir ideia?</h2>
+    <p id="confirm-msg" class="muted"></p>
+    <div class="dfoot">
+      <button class="btn" type="button" id="c-no">Cancelar</button>
+      <button class="btn danger" type="button" id="c-yes">Excluir</button>
+    </div>
+  </div>
+</dialog>
+
+<!-- Settings -->
+<dialog id="d-settings">
+  <div class="dbody">
+    <h2>Configurações</h2>
+    <p class="muted" id="set-repo"></p>
+    <div class="dfoot" style="justify-content:flex-start">
+      <button class="btn" type="button" id="set-token">Trocar token</button>
+      <button class="btn" type="button" id="set-pass">Trocar senha</button>
+      <button class="btn left" type="button" id="set-close" style="margin-left:auto;margin-right:0">Fechar</button>
+    </div>
+  </div>
+</dialog>
+
+<!-- Change token -->
+<dialog id="d-token">
+  <form id="token-form" novalidate autocomplete="off">
+    <h2>Trocar token</h2>
+    <p class="muted">Crie um token novo e cole abaixo. Ele substitui o anterior no cofre criptografado.</p>
+    <div class="field"><label for="t-token">Token novo</label>
+      <input id="t-token" type="password" autocomplete="off" spellcheck="false" required>
+      <div class="hint"><a id="t-token-link" href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener noreferrer">Criar token fine-grained</a> · só este repositório · "Contents" em "Read and write" · nada mais.</div></div>
+    <p class="error" id="t-err" role="alert"></p>
+    <div class="dfoot"><button class="btn" type="button" id="t-cancel">Cancelar</button><button class="btn primary" type="submit" id="t-submit">Salvar token</button></div>
+  </form>
+</dialog>
+
+<!-- Change password -->
+<dialog id="d-pass">
+  <form id="pass-form" novalidate>
+    <h2>Trocar senha</h2>
+    <p class="muted">Recriptografa o cofre e as ideias com a senha nova. Outros dispositivos vão pedir a senha nova.</p>
+    <div class="field"><label for="p-pass">Senha nova</label><input id="p-pass" type="password" autocomplete="new-password" required>
+      <div class="hint">Mínimo de 16 caracteres. Recomendado: uma frase de 5 palavras ou mais.</div></div>
+    <div class="field"><label for="p-pass2">Confirme a senha nova</label><input id="p-pass2" type="password" autocomplete="new-password" required></div>
+    <p class="error" id="p-err" role="alert"></p>
+    <div class="dfoot"><button class="btn" type="button" id="p-cancel">Cancelar</button><button class="btn primary" type="submit" id="p-submit">Trocar senha</button></div>
+  </form>
+</dialog>
+
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script>
+'use strict';
+/* CORE-START: pure logic, also loaded by tests/run-tests.js */
+const ITERATIONS = 600000;
+const MIN_ITERATIONS = 100000;
+const MIN_PASSWORD = 16;
+
+function bytesToB64(bytes) {
+  let s = '';
+  for (let i = 0; i < bytes.length; i += 0x8000) {
+    s += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+  }
+  return btoa(s);
+}
+function b64ToBytes(b64) {
+  const s = atob(String(b64).replace(/\s+/g, ''));
+  const out = new Uint8Array(s.length);
+  for (let i = 0; i < s.length; i++) out[i] = s.charCodeAt(i);
+  return out;
+}
+// UTF-8 safe base64 (never btoa() directly on text).
+function textToB64(text) { return bytesToB64(new TextEncoder().encode(text)); }
+function b64ToText(b64) { return new TextDecoder().decode(b64ToBytes(b64)); }
+
+async function deriveKey(password, salt, iterations) {
+  const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveKey']);
+  return crypto.subtle.deriveKey(
+    { name: 'PBKDF2', hash: 'SHA-256', salt, iterations },
+    base, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+}
+// Key material = { key, salt, iter }. Salt is fixed per file; IV is new on every write.
+async function newKeyMaterial(password) {
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  return { key: await deriveKey(password, salt, ITERATIONS), salt, iter: ITERATIONS };
+}
+async function encryptWith(material, plaintext) {
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, material.key, new TextEncoder().encode(plaintext));
+  return JSON.stringify({
+    v: 1, kdf: 'PBKDF2-SHA256', iter: material.iter,
+    salt: bytesToB64(material.salt), iv: bytesToB64(iv), ct: bytesToB64(new Uint8Array(ct)),
+  });
+}
+function parseEnvelope(text) {
+  let e;
+  try { e = JSON.parse(text); } catch (_) { throw new Error('BAD_ENVELOPE'); }
+  if (!e || e.v !== 1 || e.kdf !== 'PBKDF2-SHA256' || !Number.isInteger(e.iter) || e.iter < MIN_ITERATIONS
+      || typeof e.salt !== 'string' || typeof e.iv !== 'string' || typeof e.ct !== 'string') {
+    throw new Error('BAD_ENVELOPE');
+  }
+  const salt = b64ToBytes(e.salt), iv = b64ToBytes(e.iv);
+  if (salt.length !== 16 || iv.length !== 12) throw new Error('BAD_ENVELOPE');
+  return { iter: e.iter, salt, iv, ct: b64ToBytes(e.ct) };
+}
+async function decryptWithKey(key, env) {
+  let pt;
+  try { pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: env.iv }, key, env.ct); }
+  catch (_) { throw new Error('WRONG_PASSWORD'); }
+  return new TextDecoder().decode(pt);
+}
+async function decryptWithPassword(password, text) {
+  const env = parseEnvelope(text);
+  const key = await deriveKey(password, env.salt, env.iter);
+  const plaintext = await decryptWithKey(key, env);
+  return { plaintext, material: { key, salt: env.salt, iter: env.iter } };
+}
+function sameSalt(a, b) { return !!a && !!b && bytesToB64(a) === bytesToB64(b); }
+
+const CATEGORIES = ['exp', 'app', 'soft', 'jogo', 'outro'];
+const PHASES = ['inbox', 'eval', 'doing', 'done'];
+function clampInt(v, lo, hi, dflt) {
+  const n = Math.round(Number(v));
+  return Number.isFinite(n) ? Math.min(hi, Math.max(lo, n)) : dflt;
+}
+function normalizeIdea(raw) {
+  const r = raw || {};
+  const now = new Date().toISOString();
+  const effort = Number(r.effortWeeks);
+  return {
+    id: typeof r.id === 'string' && r.id ? r.id : crypto.randomUUID(),
+    title: String(r.title || '').trim() || '(sem título)',
+    category: CATEGORIES.includes(r.category) ? r.category : 'outro',
+    tags: Array.isArray(r.tags) ? [...new Set(r.tags.map(t => String(t).trim()).filter(Boolean))] : [],
+    description: String(r.description || ''),
+    prior: String(r.prior || ''),
+    effortWeeks: Number.isFinite(effort) && effort > 0 ? effort : 4,
+    cost: clampInt(r.cost, 0, 3, 1),
+    novelty: clampInt(r.novelty, 1, 5, 3),
+    excitement: clampInt(r.excitement, 1, 5, 3),
+    phase: PHASES.includes(r.phase) ? r.phase : 'inbox',
+    nextStep: String(r.nextStep || ''),
+    createdAt: typeof r.createdAt === 'string' ? r.createdAt : now,
+    updatedAt: typeof r.updatedAt === 'string' ? r.updatedAt : now,
+  };
+}
+function normalizeData(raw) {
+  const ideas = raw && Array.isArray(raw.ideas) ? raw.ideas.map(normalizeIdea) : [];
+  return { version: 1, ideas };
+}
+
+// Section 6 of the spec. ctx = { horizon (weeks), budget (0-3), wNov (1|2|4) }.
+function scoreIdea(idea, ctx) {
+  const base = (ctx.wNov * idea.novelty + 2 * idea.excitement) / (ctx.wNov + 2) / 5;
+  const tfit = idea.effortWeeks <= ctx.horizon ? 1 : Math.max(0.25, ctx.horizon / idea.effortWeeks);
+  const over = idea.cost - ctx.budget;
+  const rfit = over <= 0 ? 1 : (over === 1 ? 0.6 : 0.3);
+  return { base, tfit, rfit, score: Math.round(100 * base * tfit * rfit) };
+}
+function rankIdeas(ideas, ctx) {
+  return ideas
+    .map(idea => ({ idea, s: scoreIdea(idea, ctx) }))
+    .sort((a, b) => b.s.score - a.s.score
+      || String(a.idea.createdAt).localeCompare(String(b.idea.createdAt))
+      || a.idea.title.localeCompare(b.idea.title));
+}
+function fold(s) { return String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(); }
+/* CORE-END */
+
+/* ================= UI ================= */
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+const CAT_LABEL = { exp: 'Experimento', app: 'App', soft: 'Software', jogo: 'Jogo', outro: 'Outro' };
+const CAT_LONG = { exp: 'Experimento científico', app: 'App', soft: 'Software', jogo: 'Jogo', outro: 'Outro' };
+const PHASE_LABEL = { inbox: 'Não avaliada', eval: 'Em avaliação', doing: 'Em andamento', done: 'Concluída' };
+const COST_LABEL = ['Nenhum', 'Baixo', 'Médio', 'Alto'];
+const HORIZONS = [[0.5, 'Fim de semana'], [4, '1 mês'], [12, '3 meses'], [26, '6 meses']];
+const WNOV = [[1, 'Pouco'], [2, 'Equilibrado'], [4, 'Muito']];
+const CTX_KEY = 'log-de-ideias:ctx';
+const DEFAULT_CTX = { horizon: 4, budget: 1, wNov: 2 };
+
+const S = {
+  owner: '', repo: '', token: '',
+  cofre: null, ideas: null,   // key materials
+  sha: null, data: null,
+  ctx: loadCtx(),
+  filters: { cat: null, phase: null, tags: new Set(), q: '' },
+  open: new Set(),
+  saving: false, pending: false, dirty: false, saveErr: null,
+};
+
+function loadCtx() {
+  try {
+    const c = JSON.parse(localStorage.getItem(CTX_KEY) || 'null');
+    if (c && HORIZONS.some(h => h[0] === c.horizon) && [0, 1, 2, 3].includes(c.budget) && WNOV.some(w => w[0] === c.wNov)) return c;
+  } catch (_) {}
+  return { ...DEFAULT_CTX };
+}
+function saveCtx() { try { localStorage.setItem(CTX_KEY, JSON.stringify(S.ctx)); } catch (_) {} }
+
+function show(view) {
+  for (const v of ['loading', 'fatal', 'setup', 'login', 'app']) $('v-' + v).hidden = v !== view;
+}
+function fatal(msg) { $('fatal-msg').textContent = msg; show('fatal'); }
+let toastTimer;
+function toast(msg, ms = 6000) {
+  const t = $('toast'); t.textContent = msg; t.hidden = false;
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.hidden = true; }, ms);
+}
+const fmtNum = n => String(Math.round(n * 100) / 100).replace('.', ',');
+const fmtWeeks = w => w === 0.5 ? 'fim de semana' : `${fmtNum(w)} sem`;
+function tokenUrl() {
+  const p = new URLSearchParams({ name: `${S.repo || 'log-de-ideias'} site`, description: 'Contents read/write for this repository only', contents: 'write' });
+  return `https://github.com/settings/personal-access-tokens/new?${p}`;
+}
+
+/* ---------- GitHub API ---------- */
+class HttpError extends Error {
+  constructor(status, body, rateLimited) { super('HTTP ' + status); this.status = status; this.body = body; this.rateLimited = rateLimited; }
+}
+async function toHttpError(res) {
+  let body = '';
+  try { body = await res.text(); } catch (_) {}
+  return new HttpError(res.status, body, res.headers.get('x-ratelimit-remaining') === '0');
+}
+function api(token, path, opts = {}) {
+  const headers = { Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28', ...(opts.headers || {}) };
+  if (token) headers.Authorization = 'Bearer ' + token;
+  return fetch(`https://api.github.com/repos/${encodeURIComponent(S.owner)}/${encodeURIComponent(S.repo)}${path}`,
+    { cache: 'no-store', ...opts, headers });
+}
+// Returns { sha, text } or null when the file does not exist.
+async function getFile(token, name) {
+  const res = await api(token, `/contents/${name}`);
+  if (res.status === 404) return null;
+  if (!res.ok) throw await toHttpError(res);
+  const j = await res.json();
+  if (j.encoding === 'base64' && j.content) return { sha: j.sha, text: b64ToText(j.content) };
+  // Large files come back without inline content: fetch the raw body instead.
+  const raw = await api(token, `/contents/${name}`, { headers: { Accept: 'application/vnd.github.raw+json' } });
+  if (!raw.ok) throw await toHttpError(raw);
+  return { sha: j.sha, text: await raw.text() };
+}
+async function putFile(token, name, text, sha, message) {
+  const body = { message, content: textToB64(text) };
+  if (sha) body.sha = sha;
+  const res = await api(token, `/contents/${name}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  if (!res.ok) throw await toHttpError(res);
+  return (await res.json()).content.sha;
+}
+async function checkRepoAccess(token) {
+  const res = await api(token, '');
+  if (!res.ok) throw await toHttpError(res);
+}
+const isAuthError = e => e instanceof HttpError && (e.status === 401 || (e.status === 403 && !e.rateLimited));
+const isConflict = e => e instanceof HttpError && (e.status === 409 || (e.status === 422 && /sha/i.test(e.body)));
+function describeError(e) {
+  if (e instanceof HttpError) {
+    if (e.rateLimited) return 'Limite de requisições do GitHub atingido. Tente de novo em alguns minutos.';
+    if (e.status === 401) return 'Token inválido ou expirado.';
+    if (e.status === 403) return 'O token não tem permissão para este repositório.';
+    if (e.status === 404) return 'Repositório não encontrado, ou o token não tem acesso a ele.';
+    return `O GitHub respondeu com erro ${e.status}.`;
+  }
+  if (e && e.message === 'BAD_ENVELOPE') return 'Arquivo criptografado em formato inesperado.';
+  return 'Falha de rede. Verifique a conexão.';
+}
+
+/* ---------- remembered keys (IndexedDB, non-extractable CryptoKeys) ---------- */
+function idb() {
+  return new Promise((resolve, reject) => {
+    const r = indexedDB.open('log-de-ideias', 1);
+    r.onupgradeneeded = () => r.result.createObjectStore('keys');
+    r.onsuccess = () => resolve(r.result);
+    r.onerror = () => reject(r.error);
+  });
+}
+async function idbOp(mode, fn) {
+  const db = await idb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('keys', mode);
+    const req = fn(tx.objectStore('keys'));
+    tx.oncomplete = () => { db.close(); resolve(req && req.result); };
+    tx.onerror = tx.onabort = () => { db.close(); reject(tx.error); };
+  });
+}
+const loadRemembered = () => idbOp('readonly', s => s.get('device')).catch(() => null);
+const saveRemembered = v => idbOp('readwrite', s => s.put(v, 'device')).catch(() => {});
+const clearRemembered = () => idbOp('readwrite', s => s.delete('device')).catch(() => {});
+
+/* ---------- startup ---------- */
+function deduceRepo() {
+  const host = location.hostname.toLowerCase();
+  if (host.endsWith('.github.io')) {
+    const owner = host.slice(0, -'.github.io'.length);
+    const seg = location.pathname.split('/').filter(Boolean)[0];
+    return { owner, repo: seg && !seg.includes('.html') ? seg : `${owner}.github.io` };
+  }
+  return { owner: '', repo: '' };
+}
+
+let cofreText = null;
+async function start() {
+  let res;
+  try { res = await fetch('cofre.enc?t=' + Date.now(), { cache: 'no-store' }); }
+  catch (_) { return fatal('Falha de rede ao buscar o cofre.'); }
+  if (res.status === 404) return showSetup();
+  if (!res.ok) return fatal(`Erro ${res.status} ao buscar o cofre.`);
+  cofreText = await res.text();
+
+  const rem = await loadRemembered();
+  if (rem && rem.cofre && rem.ideas) {
+    try {
+      const env = parseEnvelope(cofreText);
+      if (sameSalt(env.salt, rem.cofre.salt)) {
+        const vault = JSON.parse(await decryptWithKey(rem.cofre.key, env));
+        S.cofre = rem.cofre;
+        const ok = await openIdeas(vault, null, rem.ideas);
+        if (ok) return;
+      }
+    } catch (_) { /* fall through to password */ }
+    await clearRemembered();
+    S.cofre = null;
+  }
+  showLogin();
+}
+
+function showLogin(note) {
+  $('login-note').textContent = note || 'Digite a senha para abrir.';
+  $('l-err').textContent = '';
+  show('login');
+  $('l-pass').focus();
+}
+
+$('login-form').addEventListener('submit', async ev => {
+  ev.preventDefault();
+  const pass = $('l-pass').value;
+  if (!pass) return;
+  const btn = $('l-submit');
+  btn.disabled = true; btn.textContent = 'Abrindo…'; $('l-err').textContent = '';
+  try {
+    let vault;
+    try {
+      const r = await decryptWithPassword(pass, cofreText);
+      vault = JSON.parse(r.plaintext);
+      S.cofre = r.material;
+    } catch (e) {
+      $('l-err').textContent = e.message === 'WRONG_PASSWORD' ? 'Senha incorreta' : describeError(e);
+      return;
+    }
+    const ok = await openIdeas(vault, pass, null);
+    if (ok && $('l-remember').checked) await saveRemembered({ cofre: S.cofre, ideas: S.ideas });
+  } finally {
+    $('l-pass').value = '';
+    btn.disabled = false; btn.textContent = 'Entrar';
+  }
+});
+
+// Loads ideias.enc through the API. Returns true when the dashboard is shown.
+async function openIdeas(vault, password, rememberedIdeas) {
+  S.token = vault.token; S.owner = vault.owner; S.repo = vault.repo;
+  let file, authProblem = null;
+  try {
+    file = await getFile(S.token, 'ideias.enc');
+  } catch (e) {
+    if (!isAuthError(e)) { $('l-err').textContent = describeError(e); show('login'); return false; }
+    authProblem = e;
+    // The repository is public: read without the token so the ideas still open.
+    try { file = await getFile(null, 'ideias.enc'); }
+    catch (e2) { $('l-err').textContent = describeError(e2); show('login'); return false; }
+  }
+  if (!file) { $('l-err').textContent = 'O arquivo ideias.enc não foi encontrado no repositório.'; show('login'); return false; }
+
+  try {
+    const env = parseEnvelope(file.text);
+    let plaintext;
+    if (rememberedIdeas && sameSalt(env.salt, rememberedIdeas.salt)) {
+      plaintext = await decryptWithKey(rememberedIdeas.key, env);
+      S.ideas = rememberedIdeas;
+    } else if (password) {
+      const r = await decryptWithPassword(password, file.text);
+      plaintext = r.plaintext; S.ideas = r.material;
+    } else {
+      return false;
+    }
+    S.data = normalizeData(JSON.parse(plaintext));
+    S.sha = file.sha;
+  } catch (e) {
+    $('l-err').textContent = e.message === 'WRONG_PASSWORD' ? 'Senha incorreta' : describeError(e);
+    show('login');
+    return false;
+  }
+  enterApp();
+  if (authProblem) showTokenBanner(authProblem);
+  return true;
+}
+
+/* ---------- setup ---------- */
+function showSetup() {
+  const d = deduceRepo();
+  $('s-owner').value = d.owner; $('s-repo').value = d.repo;
+  S.repo = d.repo;
+  $('s-token-link').href = tokenUrl();
+  show('setup');
+}
+$('setup-form').addEventListener('submit', async ev => {
+  ev.preventDefault();
+  const err = $('s-err'); err.textContent = '';
+  const token = $('s-token').value.trim(), owner = $('s-owner').value.trim(), repo = $('s-repo').value.trim();
+  const p1 = $('s-pass').value, p2 = $('s-pass2').value;
+  if (!token || !owner || !repo) { err.textContent = 'Preencha token, dono e repositório.'; return; }
+  if (p1.length < MIN_PASSWORD) { err.textContent = `A senha precisa de pelo menos ${MIN_PASSWORD} caracteres. Use uma frase de 5 palavras ou mais.`; return; }
+  if (p1 !== p2) { err.textContent = 'As senhas não conferem.'; return; }
+  const btn = $('s-submit'); btn.disabled = true; btn.textContent = 'Configurando…';
+  S.owner = owner; S.repo = repo;
+  try {
+    try { await checkRepoAccess(token); }
+    catch (e) { err.textContent = describeError(e); return; }
+    if (await getFile(token, 'cofre.enc')) {
+      err.textContent = 'Este repositório já está configurado. O GitHub Pages pode levar alguns minutos para publicar; aguarde e recarregue a página.';
+      return;
+    }
+    if (await getFile(token, 'ideias.enc')) {
+      err.textContent = 'Já existe um ideias.enc sem cofre.enc. Para não sobrescrever dados, nada foi gravado. Veja o README.';
+      return;
+    }
+    btn.textContent = 'Criptografando…';
+    S.cofre = await newKeyMaterial(p1);
+    S.ideas = await newKeyMaterial(p1);
+    S.data = { version: 1, ideas: [] };
+    btn.textContent = 'Gravando…';
+    // ideias.enc first: if cofre.enc exists, ideias.enc exists too.
+    S.sha = await putFile(token, 'ideias.enc', await encryptWith(S.ideas, JSON.stringify(S.data)), null, 'Initialize ideas');
+    await putFile(token, 'cofre.enc', await encryptWith(S.cofre, JSON.stringify({ token, owner, repo })), null, 'Initialize vault');
+    S.token = token;
+    $('s-token').value = ''; $('s-pass').value = ''; $('s-pass2').value = '';
+    enterApp();
+    toast('Configurado. O GitHub Pages leva alguns minutos para publicar o cofre; até lá, recarregar a página pode mostrar esta tela de novo.', 10000);
+  } catch (e) {
+    err.textContent = describeError(e);
+  } finally {
+    btn.disabled = false; btn.textContent = 'Configurar';
+  }
+});
+
+/* ---------- dashboard ---------- */
+function enterApp() {
+  show('app');
+  setSaveStatus('saved');
+  render();
+}
+
+function filtered() {
+  const f = S.filters, q = fold(f.q.trim());
+  return S.data.ideas.filter(i =>
+    (!f.cat || i.category === f.cat) &&
+    (!f.phase || i.phase === f.phase) &&
+    (!f.tags.size || i.tags.some(t => f.tags.has(t))) &&
+    (!q || fold(i.title).includes(q) || i.tags.some(t => fold(t).includes(q))));
+}
+
+function render() { renderSide(); renderCtx(); renderQueue(); }
+
+function renderSide() {
+  const ideas = S.data.ideas, f = S.filters;
+  const count = (k, v) => ideas.filter(i => i[k] === v).length;
+  let h = '<section><h2>Categoria</h2><div class="flist">';
+  h += `<button class="fitem ${!f.cat ? 'on' : ''}" data-f="cat" data-v="">Todas<span class="n">${ideas.length}</span></button>`;
+  for (const c of CATEGORIES) {
+    h += `<button class="fitem ${f.cat === c ? 'on' : ''}" data-f="cat" data-v="${c}"><span class="swatch" style="background:var(--c-${c})"></span>${CAT_LONG[c]}<span class="n">${count('category', c)}</span></button>`;
+  }
+  h += '</div></section><section><h2>Fase</h2><div class="flist">';
+  h += `<button class="fitem ${!f.phase ? 'on' : ''}" data-f="phase" data-v="">Qualquer fase<span class="n">${ideas.length}</span></button>`;
+  for (const p of PHASES) {
+    h += `<button class="fitem ${f.phase === p ? 'on' : ''}" data-f="phase" data-v="${p}">${PHASE_LABEL[p]}<span class="n">${count('phase', p)}</span></button>`;
+  }
+  h += '</div></section>';
+  const tags = [...new Set(ideas.flatMap(i => i.tags))].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+  for (const t of [...f.tags]) if (!tags.includes(t)) f.tags.delete(t);
+  h += '<section class="tagsec"><h2>Tópicos</h2>';
+  h += tags.length
+    ? '<div class="tags">' + tags.map(t => `<button class="tagbtn ${f.tags.has(t) ? 'on' : ''}" data-tag="${esc(t)}">${esc(t)}</button>`).join('') + '</div>'
+    : '<p class="muted" style="margin:0;font-size:.88rem">Nenhum tópico ainda.</p>';
+  h += '</section>';
+  $('side').innerHTML = h;
+}
+$('side').addEventListener('click', ev => {
+  const b = ev.target.closest('button');
+  if (!b) return;
+  if (b.dataset.f) S.filters[b.dataset.f] = b.dataset.v || null;
+  else if (b.dataset.tag != null) {
+    const t = b.dataset.tag;
+    S.filters.tags.has(t) ? S.filters.tags.delete(t) : S.filters.tags.add(t);
+  }
+  render();
+});
+$('q').addEventListener('input', ev => { S.filters.q = ev.target.value; renderQueue(); });
+
+function seg(key, opts) {
+  return `<div class="seg" role="group">` + opts.map(([v, l]) =>
+    `<button type="button" class="${S.ctx[key] === v ? 'on' : ''}" data-k="${key}" data-v="${v}" aria-pressed="${S.ctx[key] === v}">${l}</button>`).join('') + '</div>';
+}
+function renderCtx() {
+  $('ctx').innerHTML =
+    `<div><h2>Tempo disponível</h2>${seg('horizon', HORIZONS)}</div>` +
+    `<div><h2>Recursos</h2>${seg('budget', COST_LABEL.map((l, i) => [i, l]))}</div>` +
+    `<div><h2>Peso do ineditismo</h2>${seg('wNov', WNOV)}</div>`;
+}
+$('ctx').addEventListener('click', ev => {
+  const b = ev.target.closest('button[data-k]');
+  if (!b) return;
+  S.ctx[b.dataset.k] = Number(b.dataset.v);
+  saveCtx(); renderCtx(); renderQueue();
+});
+
+const dots = n => `<span class="dots" aria-label="${n} de 5">${'●'.repeat(n)}<span class="off">${'●'.repeat(5 - n)}</span></span>`;
+
+function scoreExplanation(i, s) {
+  const c = S.ctx;
+  const hz = HORIZONS.find(h => h[0] === c.horizon)[1].toLowerCase();
+  const t = s.tfit === 1
+    ? `esforço de ${fmtWeeks(i.effortWeeks)} cabe em ${hz} → ×1`
+    : `esforço de ${fmtWeeks(i.effortWeeks)} passa de ${hz} (${fmtNum(c.horizon)} sem) → máx(0,25; ${fmtNum(c.horizon)}/${fmtNum(i.effortWeeks)}) = ×${fmtNum(s.tfit)}`;
+  const over = i.cost - c.budget;
+  const r = over <= 0
+    ? `recursos ${COST_LABEL[i.cost].toLowerCase()} cabem em ${COST_LABEL[c.budget].toLowerCase()} → ×1`
+    : `recursos ${COST_LABEL[i.cost].toLowerCase()} excedem ${COST_LABEL[c.budget].toLowerCase()} em ${over} nível${over > 1 ? 'is' : ''} → ×${fmtNum(s.rfit)}`;
+  return `<b>Base</b> = (${c.wNov} × ineditismo ${i.novelty} + 2 × empolgação ${i.excitement}) / (${c.wNov} + 2) / 5 = ${fmtNum(s.base)}<br>` +
+    `<b>Tempo</b>: ${t}<br><b>Recursos</b>: ${r}<br>` +
+    `<b>Nota</b> = 100 × ${fmtNum(s.base)} × ${fmtNum(s.tfit)} × ${fmtNum(s.rfit)} = <b>${s.score}</b>`;
+}
+
+function renderQueue() {
+  const list = filtered();
+  const ranked = rankIdeas(list, S.ctx);
+  const fits = ranked.filter(r => r.s.tfit === 1 && r.s.rfit === 1).length;
+  const doing = list.filter(i => i.phase === 'doing').length;
+  $('stats').innerHTML =
+    `<div class="stat"><div class="v">${list.length}</div><div class="l">ideias nos filtros</div></div>` +
+    `<div class="stat"><div class="v">${fits}</div><div class="l">cabem agora</div></div>` +
+    `<div class="stat"><div class="v">${doing}</div><div class="l">em andamento</div></div>`;
+
+  let h = '<div class="cols"><span>#</span><span>Ideia</span><span>Fase</span><span>Tempo</span><span>Recursos</span><span>Inédito</span><span>Empolg.</span><span>Nota</span></div>';
+  if (!ranked.length) {
+    h += `<div class="empty">${S.data.ideas.length ? 'Nenhuma ideia com esses filtros.' : 'Nenhuma ideia ainda. Use "Nova ideia" para começar.'}</div>`;
+  }
+  ranked.forEach(({ idea: i, s }, n) => {
+    const open = S.open.has(i.id);
+    h += `<div class="item ${open ? 'open' : ''}" data-id="${esc(i.id)}">
+      <div class="row" tabindex="0" role="button" aria-expanded="${open}">
+        <span class="pos">${n + 1}</span>
+        <div class="main"><div class="title">${esc(i.title)}</div>
+          <div class="sub"><span class="chip" style="color:var(--c-${i.category})">${CAT_LABEL[i.category]}</span>${i.tags.map(t => `<span class="tag">#${esc(t)}</span>`).join('')}</div></div>
+        <span class="meta"><span class="ml">Fase</span>${PHASE_LABEL[i.phase]}</span>
+        <span class="meta"><span class="ml">Tempo</span>${fmtWeeks(i.effortWeeks)}${s.tfit < 1 ? '<span class="nofit">não cabe agora</span>' : ''}</span>
+        <span class="meta"><span class="ml">Recursos</span>${COST_LABEL[i.cost]}${s.rfit < 1 ? '<span class="nofit">não cabe agora</span>' : ''}</span>
+        <span class="meta"><span class="ml">Inédito</span>${dots(i.novelty)}</span>
+        <span class="meta"><span class="ml">Empolg.</span>${dots(i.excitement)}</span>
+        <span class="score"><span class="num">${s.score}</span><span class="bar"><i style="width:${s.score}%"></i></span></span>
+      </div>`;
+    if (open) {
+      h += `<div class="detail">
+        <div class="acts"><div class="phasebtns">${PHASES.map(p => `<button type="button" class="btn small ${i.phase === p ? 'on' : ''}" data-phase="${p}" aria-pressed="${i.phase === p}">${PHASE_LABEL[p]}</button>`).join('')}</div>
+          <button type="button" class="btn small" data-edit="1">Editar ideia</button></div>
+        <div class="dgrid">
+          <div><h3>Descrição</h3><p class="txt">${i.description ? esc(i.description) : '<span class="muted">—</span>'}</p></div>
+          <div><h3>O que já existe parecido</h3><p class="txt">${i.prior ? esc(i.prior) : '<span class="muted">—</span>'}</p></div>
+          <div><h3>Conta da nota</h3><p class="calc">${scoreExplanation(i, s)}</p></div>
+          <div><h3>Próximo passo</h3><p class="txt">${i.nextStep ? esc(i.nextStep) : '<span class="muted">—</span>'}</p></div>
+        </div></div>`;
+    }
+    h += '</div>';
+  });
+  $('queue').innerHTML = h;
+}
+
+function findIdea(id) { return S.data.ideas.find(i => i.id === id); }
+$('queue').addEventListener('click', ev => {
+  const item = ev.target.closest('.item');
+  if (!item) return;
+  const id = item.dataset.id;
+  const pb = ev.target.closest('button[data-phase]');
+  if (pb) {
+    const idea = findIdea(id);
+    if (idea && idea.phase !== pb.dataset.phase) {
+      mutate(() => { idea.phase = pb.dataset.phase; idea.updatedAt = new Date().toISOString(); });
+    }
+    return;
+  }
+  if (ev.target.closest('button[data-edit]')) { openForm(findIdea(id)); return; }
+  if (ev.target.closest('.row')) {
+    S.open.has(id) ? S.open.delete(id) : S.open.add(id);
+    renderQueue();
+  }
+});
+$('queue').addEventListener('keydown', ev => {
+  if ((ev.key === 'Enter' || ev.key === ' ') && ev.target.classList.contains('row')) {
+    ev.preventDefault();
+    const id = ev.target.closest('.item').dataset.id;
+    S.open.has(id) ? S.open.delete(id) : S.open.add(id);
+    renderQueue();
+    const row = document.querySelector(`.item[data-id="${CSS.escape(id)}"] .row`);
+    if (row) row.focus();
+  }
+});
+
+/* ---------- saving ---------- */
+function setSaveStatus(state) {
+  const el = $('save-status');
+  el.className = 'save-status ' + ({ saving: 'busy', saved: 'ok', error: 'err' }[state] || '');
+  if (state === 'saving') el.innerHTML = '<span class="dot"></span>Salvando';
+  else if (state === 'saved') el.innerHTML = '<span class="dot"></span>Salvo';
+  else el.innerHTML = '<span class="dot"></span>Erro ao salvar <button class="btn small" type="button" id="b-retry">Tentar de novo</button>';
+  const r = $('b-retry');
+  if (r) r.onclick = () => queueSave();
+}
+function mutate(fn) {
+  fn();
+  S.dirty = true;
+  render();
+  queueSave();
+}
+async function queueSave() {
+  if (S.saving) { S.pending = true; return; }
+  S.saving = true;
+  setSaveStatus('saving');
+  try {
+    do {
+      S.pending = false;
+      const text = await encryptWith(S.ideas, JSON.stringify(S.data));
+      S.sha = await putFile(S.token, 'ideias.enc', text, S.sha, 'Update ideas');
+    } while (S.pending);
+    S.dirty = false;
+    setSaveStatus('saved');
+    hideBanner();
+  } catch (e) {
+    S.pending = false;
+    if (isConflict(e)) await reloadAfterConflict();
+    else {
+      setSaveStatus('error');
+      if (isAuthError(e)) showTokenBanner(e);
+      else toast(describeError(e));
+    }
+  } finally {
+    S.saving = false;
+  }
+}
+async function reloadAfterConflict() {
+  try {
+    const file = await getFile(S.token, 'ideias.enc');
+    const env = parseEnvelope(file.text);
+    if (!sameSalt(env.salt, S.ideas.salt)) {
+      setSaveStatus('error');
+      toast('A senha foi trocada em outro dispositivo. Bloqueie e entre com a senha nova.', 12000);
+      return;
+    }
+    S.data = normalizeData(JSON.parse(await decryptWithKey(S.ideas.key, env)));
+    S.sha = file.sha;
+    S.dirty = false;
+    render();
+    setSaveStatus('saved');
+    toast('As ideias foram alteradas em outro lugar. Carreguei a versão mais recente; sua última alteração não foi salva. Refaça-a, por favor.', 12000);
+  } catch (e) {
+    setSaveStatus('error');
+    toast('Conflito ao salvar e falha ao recarregar: ' + describeError(e));
+  }
+}
+window.addEventListener('beforeunload', ev => { if (S.dirty) { ev.preventDefault(); ev.returnValue = ''; } });
+
+function showTokenBanner(e) {
+  $('banner-msg').textContent = (e && e.status === 403 ? 'O token perdeu a permissão de escrita neste repositório.' : 'O token expirou ou foi revogado.')
+    + ' As ideias continuam visíveis, mas nada é salvo até você trocar o token.';
+  $('banner').hidden = false;
+}
+function hideBanner() { $('banner').hidden = true; }
+$('banner-btn').addEventListener('click', () => openTokenDialog());
+
+/* ---------- idea form ---------- */
+function radios(containerId, name, opts) {
+  $(containerId).innerHTML = opts.map(([v, l]) =>
+    `<label><input type="radio" name="${name}" value="${v}"><span>${l}</span></label>`).join('');
+}
+radios('f-category', 'category', CATEGORIES.map(c => [c, CAT_LONG[c]]));
+radios('f-cost', 'cost', COST_LABEL.map((l, i) => [i, l]));
+radios('f-novelty', 'novelty', [1, 2, 3, 4, 5].map(n => [n, n]));
+radios('f-excitement', 'excitement', [1, 2, 3, 4, 5].map(n => [n, n]));
+radios('f-phase', 'phase', PHASES.map(p => [p, PHASE_LABEL[p]]));
+const setRadio = (name, v) => { const r = document.querySelector(`#idea-form input[name="${name}"][value="${v}"]`); if (r) r.checked = true; };
+const getRadio = name => { const r = document.querySelector(`#idea-form input[name="${name}"]:checked`); return r ? r.value : null; };
+
+let editingId = null;
+function openForm(idea) {
+  const i = idea || normalizeIdea({ title: ' ' });
+  editingId = idea ? idea.id : null;
+  $('idea-form-title').textContent = idea ? 'Editar ideia' : 'Nova ideia';
+  $('f-title').value = idea ? i.title : '';
+  $('f-tags').value = i.tags.join(', ');
+  $('f-desc').value = i.description;
+  $('f-prior').value = i.prior;
+  $('f-effort').value = i.effortWeeks;
+  $('f-next').value = i.nextStep;
+  setRadio('category', i.category); setRadio('cost', i.cost); setRadio('novelty', i.novelty);
+  setRadio('excitement', i.excitement); setRadio('phase', i.phase);
+  $('f-delete').hidden = !idea;
+  $('f-err').textContent = '';
+  $('d-idea').showModal();
+  $('f-title').focus();
+}
+$('b-new').addEventListener('click', () => openForm(null));
+$('f-cancel').addEventListener('click', () => $('d-idea').close());
+$('idea-form').addEventListener('submit', ev => {
+  ev.preventDefault();
+  const title = $('f-title').value.trim();
+  if (!title) { $('f-err').textContent = 'O título é obrigatório.'; $('f-title').focus(); return; }
+  const effort = Number(String($('f-effort').value).replace(',', '.'));
+  if (!(effort > 0)) { $('f-err').textContent = 'Informe o esforço em semanas (maior que zero).'; $('f-effort').focus(); return; }
+  const now = new Date().toISOString();
+  const fields = {
+    title,
+    category: getRadio('category'),
+    tags: $('f-tags').value.split(',').map(t => t.trim()).filter(Boolean),
+    description: $('f-desc').value.trim(),
+    prior: $('f-prior').value.trim(),
+    effortWeeks: effort,
+    cost: Number(getRadio('cost')),
+    novelty: Number(getRadio('novelty')),
+    excitement: Number(getRadio('excitement')),
+    phase: getRadio('phase'),
+    nextStep: $('f-next').value.trim(),
+  };
+  const id = editingId;
+  mutate(() => {
+    if (id) {
+      const idea = findIdea(id);
+      if (idea) Object.assign(idea, normalizeIdea({ ...idea, ...fields, updatedAt: now }));
+    } else {
+      const idea = normalizeIdea({ ...fields, id: crypto.randomUUID(), createdAt: now, updatedAt: now });
+      S.data.ideas.push(idea);
+      S.open.add(idea.id);
+    }
+  });
+  $('d-idea').close();
+});
+$('f-delete').addEventListener('click', () => {
+  const idea = findIdea(editingId);
+  if (!idea) return;
+  $('confirm-msg').textContent = `"${idea.title}" será excluída. O histórico do repositório guarda versões antigas, criptografadas.`;
+  $('d-confirm').showModal();
+});
+$('c-no').addEventListener('click', () => $('d-confirm').close());
+$('c-yes').addEventListener('click', () => {
+  const id = editingId;
+  $('d-confirm').close(); $('d-idea').close();
+  mutate(() => { S.data.ideas = S.data.ideas.filter(i => i.id !== id); S.open.delete(id); });
+});
+
+/* ---------- settings: lock, token, password ---------- */
+$('b-lock').addEventListener('click', async () => {
+  if (S.dirty && !confirm('Há alterações não salvas. Bloquear mesmo assim?')) return;
+  S.dirty = false;
+  await clearRemembered();
+  location.reload();
+});
+$('b-settings').addEventListener('click', () => {
+  $('set-repo').textContent = `Repositório: ${S.owner}/${S.repo}`;
+  $('d-settings').showModal();
+});
+$('set-close').addEventListener('click', () => $('d-settings').close());
+$('set-token').addEventListener('click', () => { $('d-settings').close(); openTokenDialog(); });
+$('set-pass').addEventListener('click', () => { $('d-settings').close(); $('p-err').textContent = ''; $('d-pass').showModal(); });
+
+function openTokenDialog() {
+  $('t-token').value = ''; $('t-err').textContent = '';
+  $('t-token-link').href = tokenUrl();
+  $('d-token').showModal();
+}
+$('t-cancel').addEventListener('click', () => $('d-token').close());
+$('token-form').addEventListener('submit', async ev => {
+  ev.preventDefault();
+  const token = $('t-token').value.trim(), err = $('t-err');
+  if (!token) return;
+  const btn = $('t-submit'); btn.disabled = true; err.textContent = '';
+  try {
+    await checkRepoAccess(token);
+    const cur = await getFile(token, 'cofre.enc');
+    const text = await encryptWith(S.cofre, JSON.stringify({ token, owner: S.owner, repo: S.repo }));
+    await putFile(token, 'cofre.enc', text, cur ? cur.sha : null, 'Update vault');
+    S.token = token;
+    $('t-token').value = '';
+    $('d-token').close();
+    hideBanner();
+    toast('Token trocado.');
+    if (S.dirty) queueSave();
+  } catch (e) {
+    err.textContent = describeError(e);
+  } finally { btn.disabled = false; }
+});
+
+$('p-cancel').addEventListener('click', () => $('d-pass').close());
+$('pass-form').addEventListener('submit', async ev => {
+  ev.preventDefault();
+  const p1 = $('p-pass').value, p2 = $('p-pass2').value, err = $('p-err');
+  if (p1.length < MIN_PASSWORD) { err.textContent = `A senha precisa de pelo menos ${MIN_PASSWORD} caracteres.`; return; }
+  if (p1 !== p2) { err.textContent = 'As senhas não conferem.'; return; }
+  if (S.saving || S.dirty) { err.textContent = 'Espere a última alteração ser salva e tente de novo.'; return; }
+  const btn = $('p-submit'); btn.disabled = true; btn.textContent = 'Trocando…'; err.textContent = '';
+  const oldIdeas = S.ideas;
+  try {
+    const cofre = await newKeyMaterial(p1), ideas = await newKeyMaterial(p1);
+    const ideasText = await encryptWith(ideas, JSON.stringify(S.data));
+    const cofreText2 = await encryptWith(cofre, JSON.stringify({ token: S.token, owner: S.owner, repo: S.repo }));
+    const curCofre = await getFile(S.token, 'cofre.enc');
+    S.sha = await putFile(S.token, 'ideias.enc', ideasText, S.sha, 'Update ideas');
+    S.ideas = ideas;
+    await putFile(S.token, 'cofre.enc', cofreText2, curCofre ? curCofre.sha : null, 'Update vault');
+    S.cofre = cofre;
+    const rem = await loadRemembered();
+    if (rem) await saveRemembered({ cofre, ideas });
+    $('p-pass').value = ''; $('p-pass2').value = '';
+    $('d-pass').close();
+    toast('Senha trocada.');
+  } catch (e) {
+    if (isAuthError(e)) showTokenBanner(e);
+    // If ideias.enc was rewritten but cofre.enc was not, the files now use different passwords.
+    err.textContent = describeError(e) + (S.ideas !== oldIdeas
+      ? ' As ideias já usam a senha nova, mas o cofre ainda usa a antiga. Tente de novo agora, antes de fechar a página.'
+      : '');
+  } finally { btn.disabled = false; btn.textContent = 'Trocar senha'; }
+});
+
+start();
+</script>
+</body>
+</html>
