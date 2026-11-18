@@ -91,7 +91,14 @@ header.top {
 }
 .banner .msg { flex: 1 1 260px; }
 
-.layout { display: grid; grid-template-columns: 230px 1fr; gap: 1.25rem; padding: 1.25rem; max-width: 1400px; margin: 0 auto; }
+.layout {
+  display: grid; gap: 1rem 1.25rem; padding: 1.25rem; max-width: 1560px; margin: 0 auto; align-items: start;
+  grid-template-columns: 220px minmax(0, 1fr) 260px;
+  grid-template-areas: "side filters weights" "side stats weights" "side queue weights";
+  grid-template-rows: auto auto 1fr;
+}
+#side { grid-area: side; } #filters-panel { grid-area: filters; } #stats { grid-area: stats; }
+#queue { grid-area: queue; } #weights { grid-area: weights; }
 aside.side { display: flex; flex-direction: column; gap: 1.25rem; }
 .side h2, .panel h2 { font-size: .78rem; text-transform: uppercase; letter-spacing: .06em; color: var(--text-2); margin: 0 0 .5rem; font-weight: 600; }
 .flist { display: flex; flex-direction: column; gap: .15rem; }
@@ -125,9 +132,27 @@ main { min-width: 0; display: flex; flex-direction: column; gap: 1rem; }
 .stat .l { color: var(--text-2); font-size: .85rem; }
 
 .queue { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+.phead { display: flex; align-items: center; justify-content: space-between; gap: .75rem; margin-bottom: .75rem; }
+.phead .panel-title { margin: 0; }
+.sortrow { margin-top: 1rem; padding-top: .9rem; border-top: 1px solid var(--line); }
+.weights summary { cursor: pointer; list-style: none; margin: 0; }
+.weights summary::-webkit-details-marker { display: none; }
+.weights summary::after { content: "▾"; float: right; color: var(--text-2); }
+.weights:not([open]) summary::after { content: "▸"; }
+.wnote { font-size: .85rem; margin: .6rem 0 .9rem; }
+.wrow { margin-bottom: 1rem; }
+.whead { display: flex; justify-content: space-between; align-items: baseline; }
+.whead label { margin: 0; color: var(--text); font-size: .92rem; }
+.wpct { font-weight: 700; font-variant-numeric: tabular-nums; color: var(--accent); }
+.wrow input[type=range] { width: 100%; padding: 0; border: 0; background: none; accent-color: var(--accent); margin: .35rem 0 .1rem; }
+.wval { font-size: .8rem; color: var(--text-2); }
+.ghead { padding: .55rem 1rem; font-size: .78rem; text-transform: uppercase; letter-spacing: .06em; color: var(--text-2); background: var(--surface-2); border-bottom: 1px solid var(--line); font-weight: 600; }
+.meta.fail, .meta.fail .dots { color: var(--warn); }
+.dots.unrated { opacity: .5; }
+.unrated-l { display: block; font-size: .7rem; color: var(--text-2); }
 .cols, .row {
   display: grid; align-items: center; gap: .75rem;
-  grid-template-columns: 2rem minmax(0, 1fr) 7.5rem 6.5rem 5.5rem 4.6rem 4.6rem 7rem;
+  grid-template-columns: 2rem minmax(0, 1fr) 6.2rem 6.6rem 4.8rem 4.8rem 5rem 6.5rem;
   padding: .65rem 1rem;
 }
 .cols { font-size: .75rem; text-transform: uppercase; letter-spacing: .05em; color: var(--text-2); border-bottom: 1px solid var(--line); }
@@ -188,10 +213,14 @@ dialog h2 { margin: 0 0 1rem; font-size: 1.15rem; }
 }
 
 /* ---------- mobile ---------- */
+@media (max-width: 1100px) {
+  .layout { grid-template-columns: 200px minmax(0, 1fr); grid-template-areas: "side filters" "side weights" "side stats" "side queue"; grid-template-rows: auto auto auto 1fr; }
+}
 @media (max-width: 860px) {
+  .layout { grid-template-columns: minmax(0, 1fr); grid-template-areas: "side" "filters" "weights" "stats" "queue"; grid-template-rows: none; }
   header.top { padding: .6rem 1rem; }
   .search { order: 5; flex-basis: 100%; max-width: none; }
-  .layout { grid-template-columns: 1fr; padding: 1rem; }
+  .layout { padding: 1rem; }
   aside.side { gap: .9rem; }
   .flist { flex-direction: row; flex-wrap: wrap; gap: .35rem; }
   .fitem { width: auto; border-color: var(--line); border-radius: 999px; padding: .25rem .7rem; font-size: .88rem; }
@@ -199,16 +228,23 @@ dialog h2 { margin: 0 0 1rem; font-size: 1.15rem; }
   .fitem.on .n { color: var(--on-accent); }
   .fitem .n { margin-left: .2rem; }
   .banner { margin: 1rem 1rem 0; }
+  .grid2 { grid-template-columns: 1fr; }
+}
+/* The queue switches to stacked rows whenever the queue itself is narrow (3-column desktop included). */
+.queue { container: queue / inline-size; }
+@container queue (max-width: 940px) {
   .cols { display: none; }
   .row { display: flex; flex-wrap: wrap; gap: .4rem .9rem; padding: .8rem 1rem; }
   .row .pos { width: 1.6rem; }
   .row .main { flex: 1 1 calc(100% - 2.6rem); }
   .row .meta { flex: 0 0 auto; }
   .meta .ml { display: inline; }
-  .nofit { display: inline; margin-left: .3rem; }
+  .nofit, .unrated-l { display: inline; margin-left: .3rem; }
   .row .score { flex: 1 1 100%; padding-left: 2.6rem; }
   .detail { padding: 1rem; }
-  .dgrid, .grid2 { grid-template-columns: 1fr; }
+}
+@container queue (max-width: 640px) {
+  .dgrid { grid-template-columns: 1fr; }
 }
 @media (max-width: 480px) {
   .stats { gap: .5rem; }
@@ -286,14 +322,21 @@ dialog h2 { margin: 0 0 1rem; font-size: 1.15rem; }
   <div class="banner" id="banner" hidden><span class="msg" id="banner-msg"></span><button class="btn small" type="button" id="banner-btn">Trocar token</button></div>
   <div class="layout">
     <aside class="side" id="side"></aside>
-    <main>
-      <section class="panel">
-        <p class="panel-title">O que faz sentido agora?</p>
-        <div class="ctx" id="ctx"></div>
-      </section>
-      <section class="stats" id="stats"></section>
-      <section class="queue" id="queue"></section>
-    </main>
+    <section class="panel filters" id="filters-panel">
+      <div class="phead"><p class="panel-title">Filtros</p>
+        <button class="btn small" type="button" id="b-clear">Limpar filtros</button></div>
+      <div class="ctx" id="thresholds"></div>
+      <div class="sortrow"><h2>Ordenar por</h2><div class="seg" role="group" aria-label="Ordenar por" id="sortby"></div></div>
+    </section>
+    <details class="panel weights" id="weights">
+      <summary class="panel-title">Pesos da nota</summary>
+      <p class="muted wnote">A nota é a média dos três critérios, ponderada por estes pesos. Tempo não entra na nota, só nos filtros.</p>
+      <div id="weights-body"></div>
+      <p class="warn wnote" id="w-allzero" hidden>Todos os pesos em zero: a nota usa pesos iguais.</p>
+      <button class="btn small" type="button" id="w-reset">Restaurar pesos iguais</button>
+    </details>
+    <section class="stats" id="stats"></section>
+    <section class="queue" id="queue"></section>
   </div>
 </section>
 
@@ -310,7 +353,8 @@ dialog h2 { margin: 0 0 1rem; font-size: 1.15rem; }
       <div class="field"><label for="f-effort">Esforço estimado (semanas)</label>
         <input id="f-effort" type="number" min="0.5" step="0.5" inputmode="decimal">
         <div class="hint">Fim de semana = 0,5 · 1 mês = 4 · 3 meses = 12 · 6 meses = 26</div></div>
-      <div class="field"><label>Recursos necessários</label><div class="radios" id="f-cost"></div></div>
+      <div class="field"><label>Facilidade (1 a 5) <span class="warn" id="f-feas-unrated" hidden>· ainda não avaliada</span></label><div class="radios" id="f-feasibility"></div>
+        <div class="hint">1 é muito difícil ou depende de coisas que você não tem. 5 é algo que dá para começar hoje.</div></div>
     </div>
     <div class="grid2">
       <div class="field"><label>Ineditismo (1 a 5)</label><div class="radios" id="f-novelty"></div></div>
@@ -464,16 +508,20 @@ async function decryptWithPassword(password, text) {
 function sameSalt(a, b) { return !!a && !!b && bytesToB64(a) === bytesToB64(b); }
 
 const CATEGORIES = ['exp', 'app', 'soft', 'jogo', 'outro'];
-const PHASES = ['inbox', 'eval', 'doing', 'done'];
+// Stored phase values. Labels live in the UI section.
+const PHASES = ['inbox', 'eval', 'doing', 'done', 'archived'];
 function clampInt(v, lo, hi, dflt) {
   const n = Math.round(Number(v));
   return Number.isFinite(n) ? Math.min(hi, Math.max(lo, n)) : dflt;
 }
+// Keeps unknown fields (e.g. the retired `cost`) so saving never drops data.
+// `feasibility` stays absent until the user sets it; feas() treats it as 3.
 function normalizeIdea(raw) {
-  const r = raw || {};
+  const r = raw && typeof raw === 'object' ? raw : {};
   const now = new Date().toISOString();
   const effort = Number(r.effortWeeks);
-  return {
+  const idea = {
+    ...r,
     id: typeof r.id === 'string' && r.id ? r.id : crypto.randomUUID(),
     title: String(r.title || '').trim() || '(sem título)',
     category: CATEGORIES.includes(r.category) ? r.category : 'outro',
@@ -481,7 +529,6 @@ function normalizeIdea(raw) {
     description: String(r.description || ''),
     prior: String(r.prior || ''),
     effortWeeks: Number.isFinite(effort) && effort > 0 ? effort : 4,
-    cost: clampInt(r.cost, 0, 3, 1),
     novelty: clampInt(r.novelty, 1, 5, 3),
     excitement: clampInt(r.excitement, 1, 5, 3),
     phase: PHASES.includes(r.phase) ? r.phase : 'inbox',
@@ -489,26 +536,91 @@ function normalizeIdea(raw) {
     createdAt: typeof r.createdAt === 'string' ? r.createdAt : now,
     updatedAt: typeof r.updatedAt === 'string' ? r.updatedAt : now,
   };
+  const f = Number(r.feasibility);
+  if (r.feasibility != null && Number.isFinite(f)) idea.feasibility = clampInt(f, 1, 5, 3);
+  else delete idea.feasibility;
+  return idea;
 }
 function normalizeData(raw) {
   const ideas = raw && Array.isArray(raw.ideas) ? raw.ideas.map(normalizeIdea) : [];
-  return { version: 1, ideas };
+  return { ...(raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {}), version: 1, ideas };
+}
+const feas = idea => idea.feasibility == null ? 3 : idea.feasibility;
+const feasRated = idea => idea.feasibility != null;
+
+// Score: weighted mean of novelty, excitement and feasibility (weights 0-10). Time is not part of it.
+const DEFAULT_WEIGHTS = { wNov: 5, wExc: 5, wFeas: 5 };
+function effectiveWeights(w) {
+  const n = clampInt(w && w.wNov, 0, 10, 5), e = clampInt(w && w.wExc, 0, 10, 5), f = clampInt(w && w.wFeas, 0, 10, 5);
+  return n + e + f === 0 ? { wNov: 1, wExc: 1, wFeas: 1 } : { wNov: n, wExc: e, wFeas: f };
+}
+function scoreIdea(idea, weights) {
+  const w = effectiveWeights(weights);
+  const sum = w.wNov + w.wExc + w.wFeas;
+  const num = w.wNov * idea.novelty + w.wExc * idea.excitement + w.wFeas * feas(idea);
+  return { w, sum, num, score: Math.round(100 * num / (5 * sum)) };
 }
 
-// Section 6 of the spec. ctx = { horizon (weeks), budget (0-3), wNov (1|2|4) }.
-function scoreIdea(idea, ctx) {
-  const base = (ctx.wNov * idea.novelty + 2 * idea.excitement) / (ctx.wNov + 2) / 5;
-  const tfit = idea.effortWeeks <= ctx.horizon ? 1 : Math.max(0.25, ctx.horizon / idea.effortWeeks);
-  const over = idea.cost - ctx.budget;
-  const rfit = over <= 0 ? 1 : (over === 1 ? 0.6 : 0.3);
-  return { base, tfit, rfit, score: Math.round(100 * base * tfit * rfit) };
+// Threshold filters: they split the queue, they do not hide ideas. null = "Qualquer".
+const EMPTY_FILTERS = { time: null, nov: null, exc: null, feas: null };
+function filterChecks(idea, f) {
+  return {
+    time: f.time == null || idea.effortWeeks <= f.time,
+    nov: f.nov == null || idea.novelty >= f.nov,
+    exc: f.exc == null || idea.excitement >= f.exc,
+    feas: f.feas == null || feas(idea) >= f.feas,
+  };
 }
-function rankIdeas(ideas, ctx) {
-  return ideas
-    .map(idea => ({ idea, s: scoreIdea(idea, ctx) }))
-    .sort((a, b) => b.s.score - a.s.score
-      || String(a.idea.createdAt).localeCompare(String(b.idea.createdAt))
-      || a.idea.title.localeCompare(b.idea.title));
+const anyFilter = f => ['time', 'nov', 'exc', 'feas'].some(k => f[k] != null);
+function meetsFilters(idea, f) { const c = filterChecks(idea, f); return c.time && c.nov && c.exc && c.feas; }
+
+const SORTS = ['score', 'time', 'nov', 'exc', 'feas'];
+// Filter group -> sort key it switches to.
+const FILTER_SORT = { time: 'time', nov: 'nov', exc: 'exc', feas: 'feas' };
+function sortValue(idea, s, key) {
+  if (key === 'time') return -idea.effortWeeks;   // ascending time
+  if (key === 'nov') return idea.novelty;
+  if (key === 'exc') return idea.excitement;
+  if (key === 'feas') return feas(idea);
+  return s.score;
+}
+// Returns { grouped, items: [{ idea, s, checks, meets }] } with meeting ideas first.
+function arrangeQueue(ideas, weights, filters, sortBy) {
+  const key = SORTS.includes(sortBy) ? sortBy : 'score';
+  const items = ideas.map(idea => {
+    const checks = filterChecks(idea, filters);
+    return { idea, s: scoreIdea(idea, weights), checks, meets: checks.time && checks.nov && checks.exc && checks.feas };
+  });
+  items.sort((a, b) =>
+    (b.meets - a.meets)
+    || (sortValue(b.idea, b.s, key) - sortValue(a.idea, a.s, key))
+    || (b.s.score - a.s.score)
+    || String(a.idea.createdAt).localeCompare(String(b.idea.createdAt))
+    || a.idea.title.localeCompare(b.idea.title));
+  return { grouped: anyFilter(filters), items };
+}
+
+// Parses an import file against existing ideas. Old formats are accepted.
+function parseImport(text, existing) {
+  let raw;
+  try { raw = JSON.parse(text); } catch (_) { throw new Error('O arquivo não é um JSON válido.'); }
+  const list = Array.isArray(raw) ? raw : (raw && Array.isArray(raw.ideas) ? raw.ideas : null);
+  if (!list) throw new Error('Formato inesperado: use {"ideas": [...]} ou uma lista.');
+  const seen = new Set(existing.map(i => fold(i.title.trim())));
+  const ids = new Set(existing.map(i => i.id));
+  const fresh = []; let skipped = 0;
+  for (const r of list) {
+    if (!r || typeof r !== 'object' || !String(r.title || '').trim()) { skipped++; continue; }
+    const key = fold(String(r.title).trim());
+    if (seen.has(key)) { skipped++; continue; }
+    seen.add(key);
+    const { cost, ...rest } = r;   // retired field: ignored on import
+    const idea = normalizeIdea(rest);
+    if (ids.has(idea.id)) idea.id = crypto.randomUUID();
+    ids.add(idea.id);
+    fresh.push(idea);
+  }
+  return { fresh, skipped };
 }
 function fold(s) { return String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(); }
 /* CORE-END */
@@ -519,31 +631,56 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;'
 
 const CAT_LABEL = { exp: 'Experimento', app: 'App', soft: 'Software', jogo: 'Jogo', outro: 'Outro' };
 const CAT_LONG = { exp: 'Experimento científico', app: 'App', soft: 'Software', jogo: 'Jogo', outro: 'Outro' };
-const PHASE_LABEL = { inbox: 'Não avaliada', eval: 'Em avaliação', doing: 'Em andamento', done: 'Concluída' };
-const COST_LABEL = ['Nenhum', 'Baixo', 'Médio', 'Alto'];
+const PHASE_LABEL = { inbox: 'Anotada', eval: 'Explorando', doing: 'Fazendo', done: 'Feita', archived: 'Arquivada' };
+const PHASE_HINT = {
+  inbox: 'Registrada para não esquecer, ainda sem análise',
+  eval: 'Investigando se vale a pena. Ainda dá para desistir',
+  doing: 'Decidiu fazer e está executando',
+  done: 'Terminada',
+  archived: 'Explorada e descartada, guardada como registro',
+};
 const HORIZONS = [[0.5, 'Fim de semana'], [4, '1 mês'], [12, '3 meses'], [26, '6 meses']];
-const WNOV = [[1, 'Pouco'], [2, 'Equilibrado'], [4, 'Muito']];
-const CTX_KEY = 'log-de-ideias:ctx';
-const DEFAULT_CTX = { horizon: 4, budget: 1, wNov: 2 };
+const LEVELS = [[3, '3 ou mais'], [4, '4 ou mais'], [5, 'Só 5']];
+const FILTER_GROUPS = [
+  { key: 'time', label: 'Tempo disponível', opts: HORIZONS },
+  { key: 'nov', label: 'Ineditismo', opts: LEVELS },
+  { key: 'exc', label: 'Empolgação', opts: LEVELS },
+  { key: 'feas', label: 'Facilidade', opts: LEVELS },
+];
+const SORT_LABEL = { score: 'Nota', time: 'Menor tempo', nov: 'Ineditismo', exc: 'Empolgação', feas: 'Facilidade' };
+const WEIGHT_ROWS = [['wNov', 'Ineditismo'], ['wExc', 'Empolgação'], ['wFeas', 'Facilidade']];
+const PREFS_KEY = 'log-de-ideias:prefs';
 
 const S = {
   owner: '', repo: '', token: '',
   cofre: null, ideas: null,   // key materials
   sha: null, data: null,
-  ctx: loadCtx(),
+  ...loadPrefs(),             // weights, thresholds, sortBy (per device)
   filters: { cat: null, phase: null, tags: new Set(), q: '' },
   open: new Set(),
   saving: false, pending: false, dirty: false, saveErr: null,
 };
 
-function loadCtx() {
+// Preferences are per device and never go to the repository.
+function loadPrefs() {
+  const out = { weights: { ...DEFAULT_WEIGHTS }, thresholds: { ...EMPTY_FILTERS }, sortBy: 'score' };
   try {
-    const c = JSON.parse(localStorage.getItem(CTX_KEY) || 'null');
-    if (c && HORIZONS.some(h => h[0] === c.horizon) && [0, 1, 2, 3].includes(c.budget) && WNOV.some(w => w[0] === c.wNov)) return c;
+    localStorage.removeItem('log-de-ideias:ctx');   // old panel format
+    const p = JSON.parse(localStorage.getItem(PREFS_KEY) || 'null');
+    if (p && typeof p === 'object') {
+      if (p.weights) for (const [k] of WEIGHT_ROWS) out.weights[k] = clampInt(p.weights[k], 0, 10, 5);
+      if (p.thresholds) for (const g of FILTER_GROUPS) {
+        const v = p.thresholds[g.key];
+        out.thresholds[g.key] = g.opts.some(o => o[0] === v) ? v : null;
+      }
+      if (SORTS.includes(p.sortBy)) out.sortBy = p.sortBy;
+    }
   } catch (_) {}
-  return { ...DEFAULT_CTX };
+  return out;
 }
-function saveCtx() { try { localStorage.setItem(CTX_KEY, JSON.stringify(S.ctx)); } catch (_) {} }
+function savePrefs() {
+  try { localStorage.setItem(PREFS_KEY, JSON.stringify({ weights: S.weights, thresholds: S.thresholds, sortBy: S.sortBy })); } catch (_) {}
+}
 
 function show(view) {
   for (const v of ['loading', 'fatal', 'setup', 'login', 'app']) $('v-' + v).hidden = v !== view;
@@ -794,32 +931,35 @@ $('setup-form').addEventListener('submit', async ev => {
 function enterApp() {
   show('app');
   setSaveStatus('saved');
+  buildWeights();
   render();
 }
 
+// Phase filter: null = "Ativas" (everything except archived).
+const inPhase = (i, phase) => phase ? i.phase === phase : i.phase !== 'archived';
 function filtered() {
   const f = S.filters, q = fold(f.q.trim());
   return S.data.ideas.filter(i =>
     (!f.cat || i.category === f.cat) &&
-    (!f.phase || i.phase === f.phase) &&
+    inPhase(i, f.phase) &&
     (!f.tags.size || i.tags.some(t => f.tags.has(t))) &&
     (!q || fold(i.title).includes(q) || i.tags.some(t => fold(t).includes(q))));
 }
 
-function render() { renderSide(); renderCtx(); renderQueue(); }
+function render() { renderSide(); renderFilters(); renderQueue(); }
 
 function renderSide() {
   const ideas = S.data.ideas, f = S.filters;
-  const count = (k, v) => ideas.filter(i => i[k] === v).length;
+  const phaseSet = ideas.filter(i => inPhase(i, f.phase));   // category counts follow the phase filter
   let h = '<section><h2>Categoria</h2><div class="flist">';
-  h += `<button class="fitem ${!f.cat ? 'on' : ''}" data-f="cat" data-v="">Todas<span class="n">${ideas.length}</span></button>`;
+  h += `<button class="fitem ${!f.cat ? 'on' : ''}" data-f="cat" data-v="">Todas<span class="n">${phaseSet.length}</span></button>`;
   for (const c of CATEGORIES) {
-    h += `<button class="fitem ${f.cat === c ? 'on' : ''}" data-f="cat" data-v="${c}"><span class="swatch" style="background:var(--c-${c})"></span>${CAT_LONG[c]}<span class="n">${count('category', c)}</span></button>`;
+    h += `<button class="fitem ${f.cat === c ? 'on' : ''}" data-f="cat" data-v="${c}"><span class="swatch" style="background:var(--c-${c})"></span>${CAT_LONG[c]}<span class="n">${phaseSet.filter(i => i.category === c).length}</span></button>`;
   }
   h += '</div></section><section><h2>Fase</h2><div class="flist">';
-  h += `<button class="fitem ${!f.phase ? 'on' : ''}" data-f="phase" data-v="">Qualquer fase<span class="n">${ideas.length}</span></button>`;
+  h += `<button class="fitem ${!f.phase ? 'on' : ''}" data-f="phase" data-v="" title="Tudo menos as arquivadas">Ativas<span class="n">${ideas.filter(i => i.phase !== 'archived').length}</span></button>`;
   for (const p of PHASES) {
-    h += `<button class="fitem ${f.phase === p ? 'on' : ''}" data-f="phase" data-v="${p}">${PHASE_LABEL[p]}<span class="n">${count('phase', p)}</span></button>`;
+    h += `<button class="fitem ${f.phase === p ? 'on' : ''}" data-f="phase" data-v="${p}" title="${esc(PHASE_HINT[p])}">${PHASE_LABEL[p]}<span class="n">${ideas.filter(i => i.phase === p).length}</span></button>`;
   }
   h += '</div></section>';
   const tags = [...new Set(ideas.flatMap(i => i.tags))].sort((a, b) => a.localeCompare(b, 'pt-BR'));
@@ -843,71 +983,123 @@ $('side').addEventListener('click', ev => {
 });
 $('q').addEventListener('input', ev => { S.filters.q = ev.target.value; renderQueue(); });
 
-function seg(key, opts) {
-  return `<div class="seg" role="group">` + opts.map(([v, l]) =>
-    `<button type="button" class="${S.ctx[key] === v ? 'on' : ''}" data-k="${key}" data-v="${v}" aria-pressed="${S.ctx[key] === v}">${l}</button>`).join('') + '</div>';
+/* ---------- top panel: threshold filters + sort ---------- */
+function renderFilters() {
+  const t = S.thresholds;
+  let h = '';
+  for (const g of FILTER_GROUPS) {
+    const opts = [[null, 'Qualquer'], ...g.opts];
+    h += `<div><h2>${g.label}</h2><div class="seg" role="group" aria-label="${g.label}">` + opts.map(([v, l]) => {
+      const on = t[g.key] === v;
+      return `<button type="button" class="${on ? 'on' : ''}" data-g="${g.key}" data-v="${v == null ? '' : v}" aria-pressed="${on}">${l}</button>`;
+    }).join('') + '</div></div>';
+  }
+  $('thresholds').innerHTML = h;
+  $('sortby').innerHTML = SORTS.map(k =>
+    `<button type="button" class="${S.sortBy === k ? 'on' : ''}" data-sort="${k}" aria-pressed="${S.sortBy === k}">${SORT_LABEL[k]}</button>`).join('');
+  $('b-clear').disabled = !anyFilter(t);
 }
-function renderCtx() {
-  $('ctx').innerHTML =
-    `<div><h2>Tempo disponível</h2>${seg('horizon', HORIZONS)}</div>` +
-    `<div><h2>Recursos</h2>${seg('budget', COST_LABEL.map((l, i) => [i, l]))}</div>` +
-    `<div><h2>Peso do ineditismo</h2>${seg('wNov', WNOV)}</div>`;
-}
-$('ctx').addEventListener('click', ev => {
-  const b = ev.target.closest('button[data-k]');
-  if (!b) return;
-  S.ctx[b.dataset.k] = Number(b.dataset.v);
-  saveCtx(); renderCtx(); renderQueue();
+$('filters-panel').addEventListener('click', ev => {
+  const g = ev.target.closest('button[data-g]');
+  if (g) {
+    const key = g.dataset.g, v = g.dataset.v === '' ? null : Number(g.dataset.v);
+    S.thresholds[key] = v;
+    if (v != null) S.sortBy = FILTER_SORT[key];
+    else if (S.sortBy === FILTER_SORT[key]) S.sortBy = 'score';
+  } else if (ev.target.closest('button[data-sort]')) {
+    S.sortBy = ev.target.closest('button[data-sort]').dataset.sort;
+  } else if (ev.target.closest('#b-clear')) {
+    for (const k of Object.keys(S.thresholds)) {
+      if (S.thresholds[k] != null && S.sortBy === FILTER_SORT[k]) S.sortBy = 'score';
+      S.thresholds[k] = null;
+    }
+  } else return;
+  savePrefs(); renderFilters(); renderQueue();
 });
 
-const dots = n => `<span class="dots" aria-label="${n} de 5">${'●'.repeat(n)}<span class="off">${'●'.repeat(5 - n)}</span></span>`;
+/* ---------- right panel: score weights ---------- */
+function buildWeights() {
+  $('weights-body').innerHTML = WEIGHT_ROWS.map(([k, l]) => `
+    <div class="wrow">
+      <div class="whead"><label for="w-${k}">${l}</label><span class="wpct" id="wp-${k}"></span></div>
+      <input type="range" id="w-${k}" data-w="${k}" min="0" max="10" step="1" value="${S.weights[k]}">
+      <div class="wval" id="wv-${k}"></div>
+    </div>`).join('');
+  updateWeightLabels();
+}
+function updateWeightLabels() {
+  const w = effectiveWeights(S.weights), sum = w.wNov + w.wExc + w.wFeas;
+  for (const [k] of WEIGHT_ROWS) {
+    $('w-' + k).value = S.weights[k];
+    $('wp-' + k).textContent = Math.round(100 * w[k] / sum) + '%';
+    $('wv-' + k).textContent = `peso ${S.weights[k]} de 10`;
+  }
+  $('w-allzero').hidden = S.weights.wNov + S.weights.wExc + S.weights.wFeas !== 0;
+}
+$('weights-body').addEventListener('input', ev => {
+  const k = ev.target.dataset.w;
+  if (!k) return;
+  S.weights[k] = clampInt(ev.target.value, 0, 10, 5);
+  updateWeightLabels(); renderQueue(); savePrefs();
+});
+$('w-reset').addEventListener('click', () => {
+  S.weights = { ...DEFAULT_WEIGHTS };
+  updateWeightLabels(); renderQueue(); savePrefs();
+});
+// Wide screens: always open. Narrow screens: collapsed by default.
+const wideMq = window.matchMedia('(min-width: 1101px)');
+function syncWeightsOpen() { $('weights').open = wideMq.matches; }
+wideMq.addEventListener('change', syncWeightsOpen);
+syncWeightsOpen();
+
+const dots = (n, extra = '') => `<span class="dots ${extra}" aria-label="${n} de 5">${'●'.repeat(n)}<span class="off">${'●'.repeat(5 - n)}</span></span>`;
 
 function scoreExplanation(i, s) {
-  const c = S.ctx;
-  const hz = HORIZONS.find(h => h[0] === c.horizon)[1].toLowerCase();
-  const t = s.tfit === 1
-    ? `esforço de ${fmtWeeks(i.effortWeeks)} cabe em ${hz} → ×1`
-    : `esforço de ${fmtWeeks(i.effortWeeks)} passa de ${hz} (${fmtNum(c.horizon)} sem) → máx(0,25; ${fmtNum(c.horizon)}/${fmtNum(i.effortWeeks)}) = ×${fmtNum(s.tfit)}`;
-  const over = i.cost - c.budget;
-  const r = over <= 0
-    ? `recursos ${COST_LABEL[i.cost].toLowerCase()} cabem em ${COST_LABEL[c.budget].toLowerCase()} → ×1`
-    : `recursos ${COST_LABEL[i.cost].toLowerCase()} excedem ${COST_LABEL[c.budget].toLowerCase()} em ${over} nível${over > 1 ? 'is' : ''} → ×${fmtNum(s.rfit)}`;
-  return `<b>Base</b> = (${c.wNov} × ineditismo ${i.novelty} + 2 × empolgação ${i.excitement}) / (${c.wNov} + 2) / 5 = ${fmtNum(s.base)}<br>` +
-    `<b>Tempo</b>: ${t}<br><b>Recursos</b>: ${r}<br>` +
-    `<b>Nota</b> = 100 × ${fmtNum(s.base)} × ${fmtNum(s.tfit)} × ${fmtNum(s.rfit)} = <b>${s.score}</b>`;
+  const w = s.w;
+  const f = feas(i);
+  const zeroNote = S.weights.wNov + S.weights.wExc + S.weights.wFeas === 0 ? ' <span class="muted">(todos os pesos em zero: usando 1, 1, 1)</span>' : '';
+  return `<b>Nota</b> = 100 × (${w.wNov} × ineditismo ${i.novelty} + ${w.wExc} × empolgação ${i.excitement} + ${w.wFeas} × facilidade ${f}) / (5 × ${s.sum})${zeroNote}<br>` +
+    `= 100 × ${s.num} / ${5 * s.sum} = <b>${s.score}</b><br>` +
+    (feasRated(i) ? '' : `Facilidade ${f} de 5 (não avaliada). Edite a ideia para definir.<br>`) +
+    `Tempo (${fmtWeeks(i.effortWeeks)}) não entra na nota, só nos filtros.`;
 }
 
 function renderQueue() {
   const list = filtered();
-  const ranked = rankIdeas(list, S.ctx);
-  const fits = ranked.filter(r => r.s.tfit === 1 && r.s.rfit === 1).length;
+  const { grouped, items } = arrangeQueue(list, S.weights, S.thresholds, S.sortBy);
+  const meeting = items.filter(x => x.meets).length;
   const doing = list.filter(i => i.phase === 'doing').length;
   $('stats').innerHTML =
-    `<div class="stat"><div class="v">${list.length}</div><div class="l">ideias nos filtros</div></div>` +
-    `<div class="stat"><div class="v">${fits}</div><div class="l">cabem agora</div></div>` +
-    `<div class="stat"><div class="v">${doing}</div><div class="l">em andamento</div></div>`;
+    `<div class="stat"><div class="v">${list.length}</div><div class="l">ideias na lista</div></div>` +
+    `<div class="stat"><div class="v">${meeting}</div><div class="l">atendem aos filtros</div></div>` +
+    `<div class="stat"><div class="v">${doing}</div><div class="l">fazendo</div></div>`;
 
-  let h = '<div class="cols"><span>#</span><span>Ideia</span><span>Fase</span><span>Tempo</span><span>Recursos</span><span>Inédito</span><span>Empolg.</span><span>Nota</span></div>';
-  if (!ranked.length) {
+  let h = '<div class="cols"><span>#</span><span>Ideia</span><span>Fase</span><span>Tempo</span><span>Inédito</span><span>Empolg.</span><span>Facilid.</span><span>Nota</span></div>';
+  if (!items.length) {
     h += `<div class="empty">${S.data.ideas.length ? 'Nenhuma ideia com esses filtros.' : 'Nenhuma ideia ainda. Use "Nova ideia" para começar.'}</div>`;
   }
-  ranked.forEach(({ idea: i, s }, n) => {
+  const below = '<span class="nofit">abaixo do filtro</span>';
+  items.forEach(({ idea: i, s, checks, meets }, n) => {
+    if (grouped && (n === 0 || (!meets && items[n - 1].meets))) {
+      h += `<div class="ghead">${meets ? `Atendem aos filtros (${meeting})` : `Não atendem (${items.length - meeting})`}</div>`;
+    }
     const open = S.open.has(i.id);
+    const rated = feasRated(i);
     h += `<div class="item ${open ? 'open' : ''}" data-id="${esc(i.id)}">
       <div class="row" tabindex="0" role="button" aria-expanded="${open}">
         <span class="pos">${n + 1}</span>
         <div class="main"><div class="title">${esc(i.title)}</div>
           <div class="sub"><span class="chip" style="color:var(--c-${i.category})">${CAT_LABEL[i.category]}</span>${i.tags.map(t => `<span class="tag">#${esc(t)}</span>`).join('')}</div></div>
         <span class="meta"><span class="ml">Fase</span>${PHASE_LABEL[i.phase]}</span>
-        <span class="meta"><span class="ml">Tempo</span>${fmtWeeks(i.effortWeeks)}${s.tfit < 1 ? '<span class="nofit">não cabe agora</span>' : ''}</span>
-        <span class="meta"><span class="ml">Recursos</span>${COST_LABEL[i.cost]}${s.rfit < 1 ? '<span class="nofit">não cabe agora</span>' : ''}</span>
-        <span class="meta"><span class="ml">Inédito</span>${dots(i.novelty)}</span>
-        <span class="meta"><span class="ml">Empolg.</span>${dots(i.excitement)}</span>
+        <span class="meta ${checks.time ? '' : 'fail'}"><span class="ml">Tempo</span>${fmtWeeks(i.effortWeeks)}${checks.time ? '' : '<span class="nofit">passa do prazo</span>'}</span>
+        <span class="meta ${checks.nov ? '' : 'fail'}"><span class="ml">Inédito</span>${dots(i.novelty)}${checks.nov ? '' : below}</span>
+        <span class="meta ${checks.exc ? '' : 'fail'}"><span class="ml">Empolg.</span>${dots(i.excitement)}${checks.exc ? '' : below}</span>
+        <span class="meta ${checks.feas ? '' : 'fail'}"><span class="ml">Facilid.</span>${dots(feas(i), rated ? '' : 'unrated')}${rated ? '' : '<span class="unrated-l">não avaliada</span>'}${checks.feas ? '' : below}</span>
         <span class="score"><span class="num">${s.score}</span><span class="bar"><i style="width:${s.score}%"></i></span></span>
       </div>`;
     if (open) {
       h += `<div class="detail">
-        <div class="acts"><div class="phasebtns">${PHASES.map(p => `<button type="button" class="btn small ${i.phase === p ? 'on' : ''}" data-phase="${p}" aria-pressed="${i.phase === p}">${PHASE_LABEL[p]}</button>`).join('')}</div>
+        <div class="acts"><div class="phasebtns">${PHASES.map(p => `<button type="button" class="btn small ${i.phase === p ? 'on' : ''}" data-phase="${p}" aria-pressed="${i.phase === p}" title="${esc(PHASE_HINT[p])}">${PHASE_LABEL[p]}</button>`).join('')}</div>
           <button type="button" class="btn small" data-edit="1">Editar ideia</button></div>
         <div class="dgrid">
           <div><h3>Descrição</h3><p class="txt">${i.description ? esc(i.description) : '<span class="muted">—</span>'}</p></div>
@@ -1028,7 +1220,7 @@ function radios(containerId, name, opts) {
     `<label><input type="radio" name="${name}" value="${v}"><span>${l}</span></label>`).join('');
 }
 radios('f-category', 'category', CATEGORIES.map(c => [c, CAT_LONG[c]]));
-radios('f-cost', 'cost', COST_LABEL.map((l, i) => [i, l]));
+radios('f-feasibility', 'feasibility', [1, 2, 3, 4, 5].map(n => [n, n]));
 radios('f-novelty', 'novelty', [1, 2, 3, 4, 5].map(n => [n, n]));
 radios('f-excitement', 'excitement', [1, 2, 3, 4, 5].map(n => [n, n]));
 radios('f-phase', 'phase', PHASES.map(p => [p, PHASE_LABEL[p]]));
@@ -1046,8 +1238,9 @@ function openForm(idea) {
   $('f-prior').value = i.prior;
   $('f-effort').value = i.effortWeeks;
   $('f-next').value = i.nextStep;
-  setRadio('category', i.category); setRadio('cost', i.cost); setRadio('novelty', i.novelty);
+  setRadio('category', i.category); setRadio('feasibility', feas(i)); setRadio('novelty', i.novelty);
   setRadio('excitement', i.excitement); setRadio('phase', i.phase);
+  $('f-feas-unrated').hidden = !idea || feasRated(idea);
   $('f-delete').hidden = !idea;
   $('f-err').textContent = '';
   $('d-idea').showModal();
@@ -1069,7 +1262,7 @@ $('idea-form').addEventListener('submit', ev => {
     description: $('f-desc').value.trim(),
     prior: $('f-prior').value.trim(),
     effortWeeks: effort,
-    cost: Number(getRadio('cost')),
+    feasibility: Number(getRadio('feasibility')),
     novelty: Number(getRadio('novelty')),
     excitement: Number(getRadio('excitement')),
     phase: getRadio('phase'),
@@ -1119,26 +1312,8 @@ $('set-pass').addEventListener('click', () => { $('d-settings').close(); $('p-er
 /* ---------- import ---------- */
 let importBatch = [];
 // Parses an import file and returns { fresh, skipped } without changing state.
-function prepareImport(text) {
-  let raw;
-  try { raw = JSON.parse(text); } catch (_) { throw new Error('O arquivo não é um JSON válido.'); }
-  const list = Array.isArray(raw) ? raw : (raw && Array.isArray(raw.ideas) ? raw.ideas : null);
-  if (!list) throw new Error('Formato inesperado: use {"ideas": [...]} ou uma lista.');
-  const seen = new Set(S.data.ideas.map(i => fold(i.title.trim())));
-  const ids = new Set(S.data.ideas.map(i => i.id));
-  const fresh = []; let skipped = 0;
-  for (const r of list) {
-    if (!r || !String(r.title || '').trim()) { skipped++; continue; }
-    const key = fold(String(r.title).trim());
-    if (seen.has(key)) { skipped++; continue; }
-    seen.add(key);
-    const idea = normalizeIdea(r);
-    if (ids.has(idea.id)) idea.id = crypto.randomUUID();
-    ids.add(idea.id);
-    fresh.push(idea);
-  }
-  return { fresh, skipped };
-}
+// Parses an import file without changing state (logic in parseImport, CORE block).
+function prepareImport(text) { return parseImport(text, S.data.ideas); }
 function applyImport(ideas) {
   if (!ideas.length) return;
   mutate(() => { S.data.ideas.push(...ideas); });
