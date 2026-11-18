@@ -251,7 +251,7 @@ dialog h2 { margin: 0 0 1rem; font-size: 1.15rem; }
     <div class="field">
       <label for="s-pass">Senha</label>
       <input id="s-pass" type="password" autocomplete="new-password" required>
-      <div class="hint">Mínimo de 16 caracteres. Recomendado: uma frase de 5 palavras ou mais. Não há como recuperar a senha.</div>
+      <div class="hint">Mínimo de 8 caracteres. Recomendado: uma frase de 5 palavras ou mais. Não há como recuperar a senha.</div>
     </div>
     <div class="field"><label for="s-pass2">Confirme a senha</label><input id="s-pass2" type="password" autocomplete="new-password" required></div>
     <button class="btn primary" type="submit" id="s-submit">Configurar</button>
@@ -371,7 +371,7 @@ dialog h2 { margin: 0 0 1rem; font-size: 1.15rem; }
     <h2>Trocar senha</h2>
     <p class="muted">Recriptografa o cofre e as ideias com a senha nova. Outros dispositivos vão pedir a senha nova.</p>
     <div class="field"><label for="p-pass">Senha nova</label><input id="p-pass" type="password" autocomplete="new-password" required>
-      <div class="hint">Mínimo de 16 caracteres. Recomendado: uma frase de 5 palavras ou mais.</div></div>
+      <div class="hint">Mínimo de 8 caracteres. Recomendado: uma frase de 5 palavras ou mais.</div></div>
     <div class="field"><label for="p-pass2">Confirme a senha nova</label><input id="p-pass2" type="password" autocomplete="new-password" required></div>
     <p class="error" id="p-err" role="alert"></p>
     <div class="dfoot"><button class="btn" type="button" id="p-cancel">Cancelar</button><button class="btn primary" type="submit" id="p-submit">Trocar senha</button></div>
@@ -385,7 +385,7 @@ dialog h2 { margin: 0 0 1rem; font-size: 1.15rem; }
 /* CORE-START: pure logic, also loaded by tests/run-tests.js */
 const ITERATIONS = 600000;
 const MIN_ITERATIONS = 100000;
-const MIN_PASSWORD = 16;
+const MIN_PASSWORD = 8;
 
 function bytesToB64(bytes) {
   let s = '';

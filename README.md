@@ -37,7 +37,7 @@ and the commit history keeps every older encrypted version. Pick a long passphra
      The token is revoked automatically when it expires, and GitHub does not document any reminder
      email, so note the date. A token unused for a year is also revoked automatically.
 3. Open the Pages URL. Since `cofre.enc` does not exist yet, the setup screen appears.
-   Paste the token, choose a password (at least 16 characters; a phrase of 5 or more words is
+   Paste the token, choose a password (at least 8 characters; a phrase of 5 or more words is
    recommended) and confirm. The site validates the token, then writes `ideias.enc` and `cofre.enc`.
 4. Pages takes a few minutes to publish `cofre.enc`. Until then, reloading may show the setup screen
    again; the site will refuse to overwrite an existing setup.
